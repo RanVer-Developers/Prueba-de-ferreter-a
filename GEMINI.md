@@ -1,11 +1,10 @@
-# GEMINI.md — Contexto y Reglas del Proyecto (RanVer Developers)
+# GEMINI.md — Contexto y Reglas del Proyecto
 
 ## 1. Contexto del Proyecto
-- **Organización / Propósito:** Soluciones comerciales y módulos de software para PyMEs y negocios en crecimiento por RanVer Developers (enfoque en usabilidad para no técnicos, adultos mayores y PyMEs mexicanas).
-- **Stack & Entorno:** Stack oficial multiplataforma (React + Tailwind + TypeScript estricto + Capacitor / Tauri v2 + Zod + Vitest).
-- **Arquitectura y Reglas del Stack:** @[stack-multiplatform](.agent/rules/stack-multiplatform.md)
+- **Nombre / Propósito:** [Completar o inferir desde README / manifiesto]
+- **Stack & Entorno:** [Completar o inferir desde package.json / pyproject.toml / etc.]
 - **Estado:** [Bootstrap (0→1) | Desarrollo activo | Producción]
-- **Idioma del Usuario Final:** Todo texto visible en UI en español de México claro, natural y sin tecnicismos innecesarios (ej. *Inicio*, *Guardar*, *Entrar*).
+- **Reglas Específicas del Proyecto:** Revisa e inspecciona siempre la carpeta `.agent/rules/` (o `rules/`) al inicio de cada tarea para aplicar las normas técnicas correspondientes al proyecto (por ejemplo `stack-multiplatform.md` para desarrollo de apps y módulos comerciales, o cualquier otra regla especializada que se agregue en el futuro).
 
 ## 2. Flujo de Trabajo del Agente
 - **Idioma:** Responde siempre en español. Código, identificadores, comentarios técnicos y commits en inglés.
