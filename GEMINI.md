@@ -1,10 +1,13 @@
 # GEMINI.md — Contexto y Reglas del Proyecto
 
 ## 1. Contexto del Proyecto
-- **Nombre / Propósito:** [Completar o inferir desde README / manifiesto]
+- **Nombre / Propósito:** [Completar o inferir desde PROJECT_BRIEF.md / README]
 - **Stack & Entorno:** [Completar o inferir desde package.json / pyproject.toml / etc.]
 - **Estado:** [Bootstrap (0→1) | Desarrollo activo | Producción]
-- **Reglas Específicas del Proyecto:** Revisa e inspecciona siempre la carpeta `.agent/rules/` (o `rules/`) al inicio de cada tarea para aplicar las normas técnicas correspondientes al proyecto (por ejemplo `stack-multiplatform.md` para desarrollo de apps y módulos comerciales, o cualquier otra regla especializada que se agregue en el futuro).
+- **Reglas y Skills del Proyecto:**
+  - **Reglas técnicas:** Revisa siempre `.agent/rules/` (o `rules/`) al inicio para aplicar las normas activas (ej. `stack-multiplatform.md` u otras que se agreguen).
+  - **Skills operativas del repo:** Consulta e invoca las skills en `.agent/skills/` según la etapa (`client-brief` para requerimientos y `PROJECT_BRIEF.md`; `pr-checklist` antes de abrir un Pull Request).
+  - **Skills de UI/UX y React:** Al diseñar o construir interfaces, consulta y aplica tu stack de batalla instalado (`react-best-practices`, `frontend-design`, `refactoring-ui`, `laws-of-ux`, `ux-heuristics` y `accessibility`), además de respetar `DESIGN.md`.
 
 ## 2. Flujo de Trabajo del Agente
 - **Idioma:** Responde siempre en español. Código, identificadores, comentarios técnicos y commits en inglés.
