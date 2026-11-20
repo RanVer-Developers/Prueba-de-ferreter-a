@@ -10,7 +10,7 @@
   - **Skills operativas del repo:** Consulta e invoca las skills en `.agent/skills/` según la etapa:
     - Paso 0 (Arranque): `gate0-dummies-coach`, `client-brief`.
     - Paso 1 (Core Headless y Módulos): Antes de escribir lógica nueva, consulta `https://github.com/RanVer-Developers/Modulos_reutilizables` y reutiliza los módulos `@modulos/*` que apliquen al `PROJECT_BRIEF.md`; para lógica propia nueva o nuevos módulos, aplica `tdd`, `vitest`, `zod-validation-utilities`, `npm-package` y `stack-multiplatform.md`.
-    - Paso 2 (UI y Multiplataforma): `react-best-practices`, `frontend-design`, `refactoring-ui`, `laws-of-ux`, `ux-heuristics`, `accessibility`, `capacitor-platforms`, `tauri-v2` (respetando `BRAND.md` y `DESIGN.md`).
+    - Paso 2 (UI y Multiplataforma): `react-best-practices`, `frontend-design`, `refactoring-ui`, `accessibility`, `tauri-v2` (respetando `BRAND.md` y `DESIGN.md`).
     - Paso 3 (Seguridad y Release): `security-and-hardening`, `firestore-rules-creation`, `firebase-security-rules-auditor`, `pr-checklist`.
 
 ## 2. Flujo de Trabajo del Agente
