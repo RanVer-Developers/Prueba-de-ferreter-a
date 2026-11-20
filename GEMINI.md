@@ -5,13 +5,14 @@
 - **Stack & Entorno:** [Completar o inferir desde package.json / pyproject.toml / etc.]
 - **Estado:** [Bootstrap (0→1) | Desarrollo activo | Producción]
 - **Reglas y Skills del Proyecto:**
-  - **Plan maestro (para no programadores):** Sigue siempre el flujo de `PLAYBOOK.md` (Paso 0 → Paso 3). No escribas código de aplicación ni pantallas antes de completar el Paso 0 (`PROJECT_BRIEF.md`, `BRAND.md`, `DATA_SECURITY.md` y `ADR.md`).
+  - **Plan maestro (para no programadores):** Sigue siempre el flujo de `PLAYBOOK.md` (Paso 0 → Paso 4). No escribas código de aplicación ni pantallas antes de completar el Paso 0 (`PROJECT_BRIEF.md`, `BRAND.md`, `DATA_SECURITY.md` y `ADR.md`).
   - **Reglas técnicas:** Revisa siempre `.agent/rules/` (o `rules/`) al inicio para aplicar las normas activas (ej. `stack-multiplatform.md` u otras que se agreguen).
-  - **Skills operativas del repo (Lectura obligatoria):** Al iniciar cualquier Paso (0, 1, 2 o 3), **ANTES de crear o editar archivos**, lee el `SKILL.md` de todas las skills asignadas a esa etapa (o indica explícitamente al usuario si alguna no aplica al alcance):
+  - **Skills operativas del repo (Lectura obligatoria):** Al iniciar cualquier Paso (0, 1, 2, 3 o 4), **ANTES de crear o editar archivos**, lee el `SKILL.md` de todas las skills asignadas a esa etapa (o indica explícitamente al usuario si alguna no aplica al alcance):
     - Paso 0 (Arranque): `gate0-dummies-coach`, `client-brief`.
     - Paso 1 (Core Headless y Módulos): Antes de escribir lógica nueva, consulta `https://github.com/RanVer-Developers/Modulos_reutilizables` y reutiliza los módulos `@modulos/*` que apliquen al `PROJECT_BRIEF.md`; para lógica propia nueva aplica `tdd`, `vitest`, `zod-validation-utilities` y `stack-multiplatform.md` (aplica `npm-package` solo si vas a crear o empaquetar un módulo `@modulos/*` publicable).
     - Paso 2 (UI y Multiplataforma): `react-best-practices`, `frontend-design`, `refactoring-ui`, `accessibility`, `capacitor-best-practices`, `tauri-v2` (respetando `BRAND.md` y `DESIGN.md`).
-    - Paso 3 (Seguridad y Release): `security-and-hardening`, `firestore-rules-creation`, `firebase-security-rules-auditor`, `pr-checklist`.
+    - Paso 3 (Seguridad y Release): `security-and-hardening`, `firestore-rules-creation`, `firebase-security-rules-auditor`, `pr-checklist` (validando contra `REVIEW.md`).
+    - Paso 4 (Mantenimiento y Evolución): Clasifica el cambio según `PLAYBOOK.md` (bug con test en `vitest`, ajuste UI o nuevo módulo desde `PROJECT_BRIEF.md`) y ejecuta `pr-checklist` + `REVIEW.md` antes de cada Pull Request.
 
 ## 2. Flujo de Trabajo del Agente
 - **Idioma:** Responde siempre en español. Código, identificadores, comentarios técnicos y commits en inglés.

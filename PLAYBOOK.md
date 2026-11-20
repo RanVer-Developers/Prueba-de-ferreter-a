@@ -70,7 +70,21 @@ Antes de que la use tu primer cliente o usuario real, la IA hace una revisión c
 
 ---
 
+### Paso 4: Mantenimiento, Soporte y Crecimiento (Ciclo Continuo)
+Cuando la app ya está operando con el cliente, el trabajo no termina: aquí es donde nacen mejoras, correcciones y nuevos módulos de pago (*upsells* como respaldo en nube, multi-sucursal o reportes avanzados). Para no romper lo que ya funciona en producción, cada solicitud entra por uno de estos 3 carriles:
+
+1. **Corrección de error (Bug):** Si algo falla con el cliente, explica qué pasó y en qué pantalla. La IA primero crea una prueba automática en `vitest` que reproduzca el fallo (**Paso 1**) y luego lo corrige en una rama `fix/...`.
+2. **Ajuste visual o de texto:** Cambios menores de pantalla o redacción se hacen respetando `BRAND.md` y `DESIGN.md` (**Paso 2**).
+3. **Nuevo módulo o servicio adicional:** Si el cliente contrata una nueva capacidad, primero actualiza `PROJECT_BRIEF.md` (**Paso 0**) y vuelve a recorrer `Paso 1 → Paso 3` solo para ese módulo nuevo.
+
+- **¿Qué decirle a la IA?**
+  > *"El cliente reportó [bug / ajuste / nuevo módulo]. Ubica si corresponde a corrección, ajuste visual o actualización de `PROJECT_BRIEF.md`, trabaja en una rama nueva y usa `REVIEW.md` antes de abrir el PR."*
+
+---
+
 ## Señales de Alerta (Qué vigilar aunque no sepas programar)
 - ❌ Si la IA empieza a crear pantallas antes de que hayas aprobado `PROJECT_BRIEF.md` y `BRAND.md`: **detenla** y pídele volver al Paso 0.
 - ❌ Si ves mensajes en inglés técnico (*"Error 500: undefined is not an object"*): dile *"Cambia todos los mensajes de error a español claro para cualquier persona."*
 - ❌ Si el diseño se ve gris, genérico o lleno de botones pequeños: dile *"Revisa `BRAND.md` y `DESIGN.md`, dale más personalidad y simplifica esta pantalla."*
+- ❌ Si la app ya la usa un cliente real y la IA quiere editar directo en `main` sin rama ni pruebas: **detenla** y pídele trabajar en una rama `fix/...` o `feat/...` con Pull Request.
+
