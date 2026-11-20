@@ -38,7 +38,7 @@
 
 ## 5. Verificación y Git
 - **Cierre adaptativo:** Inspecciona los scripts del proyecto y ejecuta los relevantes al alcance del cambio (typecheck, lint, tests, build). En fase Bootstrap basta con compilación y chequeo de tipos limpios. Si hay fallos preexistentes, repórtalos sin atribuirlos al cambio actual.
-- **Git:** Crea commits siguiendo Conventional Commits (`feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`). Trabajar en ramas `feat/...` o `fix/...` y abrir Pull Request hacia `dev` o `main` usando la plantilla de `.github/PULL_REQUEST_TEMPLATE.md`.
+- **Git:** Crea commits siguiendo Conventional Commits (`feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`). Haz un **commit de respaldo al cerrar y aprobar cada compuerta** (`Paso 0`, `Paso 1`, `Paso 2`, `Paso 3`) para blindar el avance antes de iniciar la siguiente etapa. Trabajar en ramas `feat/...` o `fix/...` y abrir Pull Request hacia `dev` o `main` usando la plantilla de `.github/PULL_REQUEST_TEMPLATE.md`.
 - **Auditoría pre-lanzamiento (solo en Producción):** Ejecuta el escaneo de vulnerabilidades disponible para el gestor de paquetes (`npm audit` o equivalente) y verifica que no queden secretos en el historial de Git.
 
 ## 6. Prohibiciones Explícitas

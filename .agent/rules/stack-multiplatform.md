@@ -110,6 +110,10 @@ Cuando se te pida crear o modificar código dentro de `@modulos/*`:
 
 ## 6. Protocolo de Consumo de Módulos en Nuevas Apps (Hooks-First)
 
+### Cómo integrar `@modulos/*` desde `RanVer-Developers/Modulos_reutilizables`
+- **Estándar objetivo:** Instalar los paquetes necesarios como dependencias desde registro (npm / GitHub Packages) cuando estén publicados.
+- **Modo monorepo (mientras no estén publicados en registro):** Traer únicamente los módulos aprobados en `PROJECT_BRIEF.md` a `packages/` dentro del workspace (`pnpm` / `npm` workspaces) y consumirlos como paquetes `@modulos/*` desde `apps/*`. **PROHIBIDO** copiar archivos sueltos de un módulo dentro de `apps/*/src/`.
+
 Cuando se te pida construir una vista, pantalla o flujo en una aplicación cliente que involucre un módulo ya existente (ej. Caja, Inventario, Periféricos, Permisos):
 
 1. **PROHIBIDO reinventar la lógica de negocio en la UI:**

@@ -12,6 +12,7 @@
 3. **Personalidad propia:** Antes de diseñar botones, define los colores, el estilo y el tono de tu marca en `BRAND.md`. Así tu app no parecerá plantilla genérica.
 4. **Seguridad desde el día 1:** Define quién puede ver, crear o borrar cada dato en `DATA_SECURITY.md` antes de guardar información real.
 5. **No reinventar la rueda:** La IA ya tiene reglas internas (`GEMINI.md` y `.agent/rules/`) para usar piezas probadas y no inventar código frágil desde cero.
+6. **Guarda un punto de respaldo por paso:** Cada vez que apruebes un paso (`Paso 0`, `Paso 1`, `Paso 2`, `Paso 3`), dile a la IA: *"Guarda este avance en Git (`commit`) antes de pasar al siguiente paso."* Así siempre puedes volver atrás si algo se rompe.
 
 ---
 
