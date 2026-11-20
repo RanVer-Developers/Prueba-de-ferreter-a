@@ -10,7 +10,7 @@
   - **Skills operativas del repo (Lectura obligatoria):** Al iniciar cualquier Paso (0, 1, 2 o 3), **ANTES de crear o editar archivos**, lee el `SKILL.md` de todas las skills asignadas a esa etapa (o indica explícitamente al usuario si alguna no aplica al alcance):
     - Paso 0 (Arranque): `gate0-dummies-coach`, `client-brief`.
     - Paso 1 (Core Headless y Módulos): Antes de escribir lógica nueva, consulta `https://github.com/RanVer-Developers/Modulos_reutilizables` y reutiliza los módulos `@modulos/*` que apliquen al `PROJECT_BRIEF.md`; para lógica propia nueva aplica `tdd`, `vitest`, `zod-validation-utilities` y `stack-multiplatform.md` (aplica `npm-package` solo si vas a crear o empaquetar un módulo `@modulos/*` publicable).
-    - Paso 2 (UI y Multiplataforma): `react-best-practices`, `frontend-design`, `refactoring-ui`, `accessibility`, `tauri-v2` (respetando `BRAND.md` y `DESIGN.md`).
+    - Paso 2 (UI y Multiplataforma): `react-best-practices`, `frontend-design`, `refactoring-ui`, `accessibility`, `capacitor-best-practices`, `tauri-v2` (respetando `BRAND.md` y `DESIGN.md`).
     - Paso 3 (Seguridad y Release): `security-and-hardening`, `firestore-rules-creation`, `firebase-security-rules-auditor`, `pr-checklist`.
 
 ## 2. Flujo de Trabajo del Agente

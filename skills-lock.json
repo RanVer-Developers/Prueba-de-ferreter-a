@@ -1,6 +1,14 @@
 {
   "version": 2,
   "skills": {
+    "capacitor-best-practices": {
+      "source": "Cap-go/capgo-skills",
+      "commit": "e82217b8fa76e11a2b2fdb49c6a221df8359cb54",
+      "sourceType": "github",
+      "skillPath": "skills/capacitor-best-practices/SKILL.md",
+      "computedHash": "541b0dd17db972b1eee59ccab876e68e5db99d130c09db2c43a88afb95154db9",
+      "installMode": "copy"
+    },
     "capacitor-platforms": {
       "source": "capawesome-team/skills",
       "commit": "847d536b4b6b09a8c575b607beaacd864a5ca81e",
