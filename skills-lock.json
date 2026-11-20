@@ -1,0 +1,85 @@
+{
+  "version": 2,
+  "skills": {
+    "capacitor-platforms": {
+      "source": "capawesome-team/skills",
+      "commit": "847d536b4b6b09a8c575b607beaacd864a5ca81e",
+      "sourceType": "github",
+      "skillPath": "skills/capacitor-platforms/SKILL.md",
+      "computedHash": "8b85e8bf23913823900f1561de48a947041267783439c52b5bea7577583ac8ad",
+      "installMode": "copy"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "commit": "57217cf86ba38148a57af9e90d14a4c049558330",
+      "sourceType": "github",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "computedHash": "7bc223e2aafbdbf6e50ea243ba6ef67fe432bb069ab439fea0390795dac0bf7f",
+      "installMode": "copy"
+    },
+    "firebase-security-rules-auditor": {
+      "source": "firebase/agent-skills",
+      "commit": "99954a30898bb5ddc8152ee10e124dc3b4106bf7",
+      "sourceType": "github",
+      "skillPath": "skills/firebase-security-rules-auditor/SKILL.md",
+      "computedHash": "19bc79ffbc43d2bdbeef28d8f093e7f33748b8ba155d021f7efde2618d7544c1",
+      "installMode": "copy"
+    },
+    "firestore-rules-creation": {
+      "source": "firebase/agent-skills",
+      "commit": "99954a30898bb5ddc8152ee10e124dc3b4106bf7",
+      "sourceType": "github",
+      "skillPath": "skills/firestore-rules-creation/SKILL.md",
+      "computedHash": "a0230fba169c539608f2f51d14590c4420fbe4746ed6f71fdd115812a07ee4d5",
+      "installMode": "copy"
+    },
+    "npm-package": {
+      "source": "jwynia/agent-skills",
+      "commit": "e02ec7e226a6e4f8419fd3b88a1d8e472d421b32",
+      "sourceType": "github",
+      "skillPath": "skills/tech/development/tooling/npm-package/SKILL.md",
+      "computedHash": "198ba2031e01a9a7cb8c152a2d0885fb8c6f458a221fe94b24c78ceceaef119f",
+      "installMode": "copy"
+    },
+    "security-and-hardening": {
+      "source": "addyosmani/agent-skills",
+      "commit": "8c99fa36d90068c82d547f7c12a9d67a3e95f4ee",
+      "sourceType": "github",
+      "skillPath": "skills/security-and-hardening/SKILL.md",
+      "computedHash": "9bfc78e1ee2e23f3d226f610d8ed8e0cf6fb4f7e90a44db0a41b636735a24767",
+      "installMode": "copy"
+    },
+    "tauri-v2": {
+      "source": "nodnarbnitram/claude-code-extensions",
+      "commit": "35e7f7deae689e12b94f9c242b8f59efe0f66476",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/tauri-v2/SKILL.md",
+      "computedHash": "785f2858f21d8d6757c136dded755da9ebb16d292391defcb7171e445c03e77d",
+      "installMode": "copy"
+    },
+    "tdd": {
+      "source": "mattpocock/skills",
+      "commit": "abeeaf95660ba9e8b7c753eb38f441ca707a8823",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/tdd/SKILL.md",
+      "computedHash": "e3e0f78ff1c2d52ffefa0378baa1e80e129d359288cf9a56f4e59afcd2aac86c",
+      "installMode": "copy"
+    },
+    "vitest": {
+      "source": "sentimony/skills",
+      "commit": "4be896eb9c8ebd6bab47d88422f83841648da408",
+      "sourceType": "github",
+      "skillPath": "skills/vitest/SKILL.md",
+      "computedHash": "11e9f24cd1b3b4050bdb42bf9cc04682ec32b363fb3f8cc46fc29887c5a27851",
+      "installMode": "copy"
+    },
+    "zod-validation-utilities": {
+      "source": "giuseppe-trisciuoglio/developer-kit",
+      "commit": "fe73fb33a09ee6562eeec7415a3f9a3bcf795177",
+      "sourceType": "github",
+      "skillPath": "plugins/developer-kit-typescript/skills/zod-validation-utilities/SKILL.md",
+      "computedHash": "fc20e0842538c822bda684392f87a840271bd98f8b81405f24de0e2780b921f4",
+      "installMode": "copy"
+    }
+  }
+}
