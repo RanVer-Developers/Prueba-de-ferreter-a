@@ -13,6 +13,7 @@ Principios de diseño para aplicaciones dirigidas a PyMEs mexicanas y usuarios n
   - Confirmar antes de eliminar o cancelar algo importante (*"¿Seguro que deseas eliminar este cliente?"*).
   - Mensajes de error humanos y accionables (ej. *"Falta escribir el teléfono"* en lugar de *"ValidationError: phone is required"*).
 - **Feedback inmediato:** Mostrar estados claros de *Cargando...*, *Guardado correctamente* o *Sin conexión*.
+- **Soporte fácil (Logs para el cliente):** Incluir en el menú de *Ayuda / Soporte* un botón claro (**`Copiar reporte técnico`**) para que el usuario pueda enviar errores recientes por WhatsApp sin abrir herramientas técnicas.
 
 ---
 

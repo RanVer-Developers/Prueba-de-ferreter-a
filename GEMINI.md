@@ -29,6 +29,7 @@
 - **Principios:** KISS, YAGNI y DRY. En fase Bootstrap evita abstracciones prematuras; en Desarrollo/Producción respeta la arquitectura y capas ya establecidas.
 - **Tipado y Calidad:** Tipado estricto (sin `any` ni supresiones injustificadas). Funciones pequeñas, retornos tempranos y nombres consistentes con las convenciones del lenguaje y del proyecto.
 - **Manejo de errores y bordes:** Valida toda entrada externa (HTTP, CLI, formularios, APIs) en tiempo de ejecución. Nunca silencies excepciones con `catch` vacíos; registra contexto útil sin exponer datos sensibles.
+- **Sistema de logs (Mejora continua):** Toda aplicación debe incluir por defecto un registro local de errores recientes (últimos ~50 eventos con fecha/hora, pantalla, acción y detalle técnico sanitizado, sin PII ni secretos) exportable desde UI (*"Copiar reporte técnico"*). Si el proyecto incluye nube/soporte remoto, conectar envío automático de errores (ej. Sentry o colección de logs).
 - **Tests:** Si el proyecto cuenta con infraestructura de pruebas, al corregir un bug añade o actualiza una prueba que reproduzca el fallo; al añadir lógica crítica, incluye pruebas proporcionales al riesgo.
 - **Dependencias:** Prioriza soluciones nativas y librerías ya instaladas. Pide confirmación antes de agregar dependencias nuevas o pesadas.
 

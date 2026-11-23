@@ -21,6 +21,7 @@ Este documento define qué debe revisar la IA antes de dar por listo un cambio y
 - **Español claro de México:** Todos los textos visibles para el usuario final (botones, etiquetas, mensajes de error y estados vacíos) están en español natural, sin tecnicismos ni errores crudos en inglés.
 - **Confirmación en acciones destructivas:** Eliminar registros o cancelar ventas/citas pide confirmación explícita.
 - **Accesibilidad y móvil:** Botones principales con área táctil cómoda (`44px+`), contraste legible y diseño funcional en pantalla pequeña/mostrador.
+- **Logs de soporte:** Errores inesperados registrados localmente (sin datos sensibles) y accesibles desde *Ayuda / Soporte* para facilitar correcciones en Paso 4.
 
 ---
 
