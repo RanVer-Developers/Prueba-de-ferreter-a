@@ -1,0 +1,13 @@
+{
+  "name": "ferre-alfredo",
+  "version": "0.1.0",
+  "description": "Aplicación web para Ferre Alfredo construida sobre @modulos/* reutilizables",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "packageManager": "pnpm@12.21.0"
+}

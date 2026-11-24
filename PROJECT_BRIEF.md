@@ -31,4 +31,11 @@
 - **Plataformas objetivo:** [x] Web / PWA  [ ] Android  [ ] iOS  [ ] Escritorio
 - **¿Requiere funcionar sin internet (Offline-first)?** Sí (intermitencia de internet)
 - **Módulos del monorepo RanVer a reutilizar:**
-  - Por verificar en catálogo `RanVer-Developers/Modulos_reutilizables` al iniciar Paso 1 (`inventory`, `sales`/`pos`, `cash-register`, `suppliers`/`purchases`, `audit`, `auth`).
+  - `@modulos/core-shared` (aritmética `Money`, `ROUND_HALF_EVEN`, esquemas Zod base)
+  - `@modulos/core-auth-rbac` (PIN, roles `Dueño, Encargado, Cajera, Vendedor, Bodeguero, Chofer`, RBAC y aprobación de supervisor)
+  - `@modulos/core-catalog` (catálogo, categorías, códigos de barras y listas de precios)
+  - `@modulos/core-inventory` (existencias, kardex inmutable, alertas de stock bajo y ajustes auditados)
+  - `@modulos/core-purchasing` (proveedores, órdenes de compra, recepción de mercancía y actualización de costos)
+  - `@modulos/core-cashier` (turnos, cobros en mostrador, cambio, gastos, anulaciones auditadas, cortes X/Z e idempotencia offline)
+  - `@modulos/core-orders` (órdenes rápidas de mostrador y órdenes en espera)
+  - `@modulos/core-reports` (indicadores del negocio, utilidad, clasificación ABC y exportación)

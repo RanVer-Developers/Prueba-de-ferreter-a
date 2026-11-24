@@ -1,0 +1,42 @@
+{
+  "name": "@modulos/core-shared",
+  "version": "1.0.0",
+  "description": "Primitivas puras compartidas de dominio: aritmética monetaria en centavos (ROUND_HALF_EVEN), esquemas Zod base y generación segura de identificadores.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "shared",
+    "money",
+    "round-half-even",
+    "iso-4217",
+    "zod",
+    "domain-driven-design"
+  ],
+  "author": "RanVer Developers",
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "vitest": "^5.1.1"
+  }
+}
