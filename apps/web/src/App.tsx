@@ -1,0 +1,630 @@
+import { useEffect, useMemo, useState } from "react";
+import {
+  BarChart3,
+  Calculator,
+  LifeBuoy,
+  LogOut,
+  Package,
+  ShoppingCart,
+  Users,
+  Wifi,
+  WifiOff,
+  Wrench,
+} from "lucide-react";
+import { Toaster, toast } from "sonner";
+import { generateId } from "@modulos/core-shared";
+import { CashierView } from "./components/CashierView.js";
+import { InventoryPurchasingView } from "./components/InventoryPurchasingView.js";
+import { PinLoginScreen } from "./components/PinLoginScreen.js";
+import { PosView, buildParkedOrder } from "./components/PosView.js";
+import { ReportsAuditView } from "./components/ReportsAuditView.js";
+import { UsersSupportModal } from "./components/UsersSupportModal.js";
+import {
+  ROLE_PERMISSIONS,
+  addCents,
+  computeShiftExpectedCash,
+  createAuditEntry,
+  formatMXN,
+  getOpenShift,
+  loadFerreState,
+  multiplyCents,
+  saveFerreState,
+  subtractCents,
+} from "./core/ferre-store.js";
+import {
+  ROLE_LABELS,
+  type CartItem,
+  type FerreState,
+  type FerreUser,
+  type PaymentMethod,
+} from "./core/ferre-types.js";
+
+type ActiveTab = "pos" | "cashier" | "inventory" | "reports";
+
+export function App() {
+  const [state, setState] = useState<FerreState>(() => loadFerreState());
+  const [currentUser, setCurrentUser] = useState<FerreUser | null>(null);
+  const [activeTab, setActiveTab] = useState<ActiveTab>("pos");
+  const [modal, setModal] = useState<"users" | "support" | null>(null);
+  const [isOnline, setIsOnline] = useState<boolean>(() => navigator.onLine);
+
+  useEffect(() => {
+    saveFerreState(state);
+  }, [state]);
+
+  useEffect(() => {
+    const onOnline = () => setIsOnline(true);
+    const onOffline = () => setIsOnline(false);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
+  }, []);
+
+  const openShift = useMemo(
+    () => getOpenShift(state.shifts),
+    [state.shifts]
+  );
+
+  if (!currentUser) {
+    return (
+      <>
+        <Toaster position="top-right" richColors />
+        <PinLoginScreen
+          users={state.users}
+          onLogin={(user) => {
+            setCurrentUser(user);
+            const perms = ROLE_PERMISSIONS[user.role];
+            if (perms.canSell) setActiveTab("pos");
+            else if (perms.canManageInventory) setActiveTab("inventory");
+            else setActiveTab("pos");
+          }}
+        />
+      </>
+    );
+  }
+
+  const perms = ROLE_PERMISSIONS[currentUser.role];
+
+  const handleCompleteSale = (payload: {
+    items: CartItem[];
+    discountCents: number;
+    paymentMethod: PaymentMethod;
+    cashReceivedCents: number;
+    authorizedBy?: FerreUser;
+  }) => {
+    if (!openShift) return;
+    const subtotalCents = payload.items.reduce(
+      (acc, i) => addCents(acc, i.subtotalCents),
+      0
+    );
+    const totalCents = subtractCents(subtotalCents, payload.discountCents);
+    const changeCents =
+      payload.paymentMethod === "cash"
+        ? subtractCents(payload.cashReceivedCents, totalCents)
+        : 0;
+
+    const saleId = generateId();
+    const folio = state.nextFolio;
+
+    setState((prev) => {
+      const nextProducts = prev.products.map((p) => {
+        const sold = payload.items.find((i) => i.productId === p.id);
+        return sold
+          ? { ...p, stock: Number((p.stock - sold.quantity).toFixed(3)) }
+          : p;
+      });
+
+      const nextAudit = [...prev.auditLog];
+      if (payload.discountCents > 0) {
+        const authUser = payload.authorizedBy ?? currentUser;
+        nextAudit.unshift(
+          createAuditEntry(
+            "discount_applied",
+            authUser,
+            `Descuento de ${formatMXN(payload.discountCents)} aplicado en folio #${folio} (cobró ${currentUser.name}).`
+          )
+        );
+      }
+
+      return {
+        ...prev,
+        nextFolio: prev.nextFolio + 1,
+        products: nextProducts,
+        sales: [
+          {
+            id: saleId,
+            folio,
+            shiftId: openShift.id,
+            items: payload.items,
+            subtotalCents,
+            discountCents: payload.discountCents,
+            totalCents,
+            paymentMethod: payload.paymentMethod,
+            cashReceivedCents: payload.cashReceivedCents,
+            changeCents,
+            status: "completed",
+            createdByUserId: currentUser.id,
+            createdByUserName: currentUser.name,
+            createdAt: new Date().toISOString(),
+          },
+          ...prev.sales,
+        ],
+        auditLog: nextAudit,
+      };
+    });
+
+    toast.success(
+      payload.paymentMethod === "cash"
+        ? `Cobro #${folio} registrado — Cambio: ${formatMXN(changeCents)}`
+        : `Cobro #${folio} registrado correctamente`
+    );
+  };
+
+  const handleParkOrder = (label: string, items: CartItem[]) => {
+    const order = buildParkedOrder(label, items, currentUser.name);
+    setState((prev) => ({
+      ...prev,
+      parkedOrders: [order, ...prev.parkedOrders],
+    }));
+  };
+
+  const handleResumeParkedOrder = (orderId: string) => {
+    const found = state.parkedOrders.find((o) => o.id === orderId);
+    if (!found) return undefined;
+    setState((prev) => ({
+      ...prev,
+      parkedOrders: prev.parkedOrders.filter((o) => o.id !== orderId),
+    }));
+    return found;
+  };
+
+  const handleOpenShift = (openingFloatCents: number) => {
+    setState((prev) => ({
+      ...prev,
+      shifts: [
+        {
+          id: generateId(),
+          openedByUserId: currentUser.id,
+          openedByUserName: currentUser.name,
+          openedAt: new Date().toISOString(),
+          openingFloatCents,
+          status: "open",
+          movements: [],
+        },
+        ...prev.shifts,
+      ],
+    }));
+  };
+
+  const handleAddMovement = (
+    type: "deposit" | "withdrawal",
+    amountCents: number,
+    reason: string
+  ) => {
+    if (!openShift) return;
+    setState((prev) => ({
+      ...prev,
+      shifts: prev.shifts.map((s) =>
+        s.id === openShift.id
+          ? {
+              ...s,
+              movements: [
+                ...s.movements,
+                {
+                  id: generateId(),
+                  type,
+                  amountCents,
+                  reason,
+                  userName: currentUser.name,
+                  createdAt: new Date().toISOString(),
+                },
+              ],
+            }
+          : s
+      ),
+      auditLog: [
+        createAuditEntry(
+          "cash_movement",
+          currentUser,
+          `${type === "deposit" ? "Entrada" : "Retiro"} en caja por ${formatMXN(amountCents)}. Motivo: ${reason}`
+        ),
+        ...prev.auditLog,
+      ],
+    }));
+  };
+
+  const handleCloseShift = (countedCashCents: number) => {
+    if (!openShift) return;
+    const expectedCashCents = computeShiftExpectedCash(openShift, state.sales);
+    const differenceCents = subtractCents(countedCashCents, expectedCashCents);
+
+    setState((prev) => {
+      const nextAudit = [...prev.auditLog];
+      if (differenceCents !== 0) {
+        nextAudit.unshift(
+          createAuditEntry(
+            "cash_shift_closed_diff",
+            currentUser,
+            `Corte cerrado con diferencia de ${formatMXN(differenceCents)} (Esperado: ${formatMXN(expectedCashCents)}, Contado: ${formatMXN(countedCashCents)}).`
+          )
+        );
+      }
+      return {
+        ...prev,
+        shifts: prev.shifts.map((s) =>
+          s.id === openShift.id
+            ? {
+                ...s,
+                status: "closed",
+                closedByUserName: currentUser.name,
+                closedAt: new Date().toISOString(),
+                expectedCashCents,
+                countedCashCents,
+                differenceCents,
+              }
+            : s
+        ),
+        auditLog: nextAudit,
+      };
+    });
+
+    toast.success(
+      differenceCents === 0
+        ? "Corte de caja exacto. Turno cerrado."
+        : `Corte cerrado con diferencia de ${formatMXN(differenceCents)}.`
+    );
+  };
+
+  const handleCancelSale = (
+    saleId: string,
+    reason: string,
+    supervisor: FerreUser
+  ) => {
+    const sale = state.sales.find((s) => s.id === saleId);
+    if (!sale || sale.status === "cancelled") return;
+
+    setState((prev) => ({
+      ...prev,
+      products: prev.products.map((p) => {
+        const line = sale.items.find((i) => i.productId === p.id);
+        return line
+          ? { ...p, stock: Number((p.stock + line.quantity).toFixed(3)) }
+          : p;
+      }),
+      sales: prev.sales.map((s) =>
+        s.id === saleId
+          ? {
+              ...s,
+              status: "cancelled",
+              cancelledByUserName: supervisor.name,
+              cancelReason: reason,
+            }
+          : s
+      ),
+      auditLog: [
+        createAuditEntry(
+          "sale_cancelled",
+          supervisor,
+          `Venta folio #${sale.folio} (${formatMXN(sale.totalCents)}) cancelada. Motivo: ${reason}`
+        ),
+        ...prev.auditLog,
+      ],
+    }));
+
+    toast.success(`Venta #${sale.folio} cancelada y mercancía devuelta al stock.`);
+  };
+
+  const handleAdjustStock = (
+    productId: string,
+    delta: number,
+    reason: string
+  ) => {
+    const prod = state.products.find((p) => p.id === productId);
+    if (!prod) return;
+    const nextStock = Number((prod.stock + delta).toFixed(3));
+    if (nextStock < 0) {
+      toast.error("El ajuste dejaría el inventario en negativo.");
+      return;
+    }
+
+    setState((prev) => ({
+      ...prev,
+      products: prev.products.map((p) =>
+        p.id === productId ? { ...p, stock: nextStock } : p
+      ),
+      auditLog: [
+        createAuditEntry(
+          "inventory_adjusted",
+          currentUser,
+          `Ajuste de ${delta > 0 ? `+${delta}` : delta} ${prod.unit} en "${prod.name}". Motivo: ${reason}`
+        ),
+        ...prev.auditLog,
+      ],
+    }));
+    toast.success("Inventario actualizado y registrado en bitácora.");
+  };
+
+  const handleReceivePurchase = (payload: {
+    supplierId: string;
+    productId: string;
+    quantity: number;
+    unitCostCents: number;
+  }) => {
+    const sup = state.suppliers.find((s) => s.id === payload.supplierId);
+    const prod = state.products.find((p) => p.id === payload.productId);
+    if (!sup || !prod) return;
+
+    const totalCents = multiplyCents(payload.unitCostCents, payload.quantity);
+
+    setState((prev) => ({
+      ...prev,
+      products: prev.products.map((p) =>
+        p.id === prod.id
+          ? {
+              ...p,
+              stock: Number((p.stock + payload.quantity).toFixed(3)),
+              costCents: payload.unitCostCents,
+            }
+          : p
+      ),
+      purchases: [
+        {
+          id: generateId(),
+          supplierId: sup.id,
+          supplierName: sup.name,
+          items: [
+            {
+              productId: prod.id,
+              productName: prod.name,
+              quantity: payload.quantity,
+              unitCostCents: payload.unitCostCents,
+            },
+          ],
+          totalCents,
+          userName: currentUser.name,
+          createdAt: new Date().toISOString(),
+        },
+        ...prev.purchases,
+      ],
+      auditLog: [
+        createAuditEntry(
+          "purchase_received",
+          currentUser,
+          `Entrada de ${payload.quantity} ${prod.unit} de "${prod.name}" (${sup.name}) por ${formatMXN(totalCents)}.`
+        ),
+        ...prev.auditLog,
+      ],
+    }));
+
+    toast.success(`Compra sumada al inventario (+${payload.quantity} ${prod.unit}).`);
+  };
+
+  const navItems: Array<{
+    id: ActiveTab;
+    label: string;
+    icon: typeof ShoppingCart;
+    visible: boolean;
+  }> = [
+    { id: "pos", label: "Mostrador", icon: ShoppingCart, visible: perms.canSell },
+    {
+      id: "cashier",
+      label: "Caja",
+      icon: Calculator,
+      visible: perms.canOpenCloseShift || perms.canCollect,
+    },
+    {
+      id: "inventory",
+      label: "Inventario y Compras",
+      icon: Package,
+      visible: perms.canManageInventory || perms.canReceivePurchase,
+    },
+    {
+      id: "reports",
+      label: "Indicadores y Bitácora",
+      icon: BarChart3,
+      visible: perms.canViewReports,
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      <Toaster position="top-right" richColors />
+
+      {/* Barra superior */}
+      <header className="bg-slate-900 text-white border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center shrink-0">
+              <Wrench className="w-5 h-5" strokeWidth={2} />
+            </div>
+            <div>
+              <span className="font-bold text-base tracking-tight block leading-none">
+                Ferre Alfredo
+              </span>
+              <span className="text-xs text-slate-300">
+                {currentUser.name} • {ROLE_LABELS[currentUser.role]}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                isOnline
+                  ? "bg-emerald-950/70 text-emerald-300 border border-emerald-800"
+                  : "bg-amber-950/80 text-amber-300 border border-amber-700"
+              }`}
+            >
+              {isOnline ? (
+                <>
+                  <Wifi className="w-3.5 h-3.5" strokeWidth={1.75} /> En línea
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-3.5 h-3.5" strokeWidth={1.75} /> Modo
+                  local sin internet
+                </>
+              )}
+            </span>
+
+            {perms.canManageUsers && (
+              <button
+                type="button"
+                onClick={() => setModal("users")}
+                className="min-h-10 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 transition"
+              >
+                <Users className="w-4 h-4" strokeWidth={1.75} />
+                Usuarios
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setModal("support")}
+              className="min-h-10 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 transition"
+            >
+              <LifeBuoy className="w-4 h-4 text-amber-400" strokeWidth={1.75} />
+              Ayuda
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setCurrentUser(null)}
+              className="min-h-10 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 transition"
+            >
+              <LogOut className="w-4 h-4" strokeWidth={1.75} />
+              Cambiar usuario
+            </button>
+          </div>
+        </div>
+
+        {/* Navegación principal */}
+        <nav
+          aria-label="Secciones principales"
+          className="max-w-7xl mx-auto px-4 flex gap-1 overflow-x-auto border-t border-slate-800/80"
+        >
+          {navItems
+            .filter((item) => item.visible)
+            .map((item) => {
+              const Icon = item.icon;
+              const active = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setActiveTab(item.id)}
+                  className={`min-h-12 px-4 py-2.5 text-sm font-semibold inline-flex items-center gap-2 border-b-2 whitespace-nowrap transition ${
+                    active
+                      ? "border-amber-400 text-white bg-slate-800/60"
+                      : "border-transparent text-slate-300 hover:text-white hover:bg-slate-800/40"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" strokeWidth={1.75} />
+                  {item.label}
+                </button>
+              );
+            })}
+        </nav>
+      </header>
+
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-5">
+        {currentUser.role === "driver" ? (
+          <div className="bg-white border border-slate-200 rounded-xl p-8 max-w-lg mx-auto text-center shadow-sm">
+            <h1 className="text-lg font-semibold text-slate-900 mb-2">
+              Módulo de Repartos en Versión 2
+            </h1>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Su puesto de <strong>Chofer</strong> ya está registrado y protegido
+              en el sistema. Las rutas de reparto y mantenimiento de unidades se
+              habilitarán en la siguiente etapa.
+            </p>
+          </div>
+        ) : (
+          <>
+            {activeTab === "pos" && perms.canSell && (
+              <PosView
+                currentUser={currentUser}
+                users={state.users}
+                products={state.products}
+                openShift={openShift}
+                parkedOrders={state.parkedOrders}
+                onCompleteSale={handleCompleteSale}
+                onParkOrder={handleParkOrder}
+                onResumeParkedOrder={handleResumeParkedOrder}
+              />
+            )}
+            {activeTab === "cashier" &&
+              (perms.canOpenCloseShift || perms.canCollect) && (
+                <CashierView
+                  currentUser={currentUser}
+                  users={state.users}
+                  openShift={openShift}
+                  shifts={state.shifts}
+                  sales={state.sales}
+                  onOpenShift={handleOpenShift}
+                  onAddMovement={handleAddMovement}
+                  onCloseShift={handleCloseShift}
+                  onCancelSale={handleCancelSale}
+                />
+              )}
+            {activeTab === "inventory" &&
+              (perms.canManageInventory || perms.canReceivePurchase) && (
+                <InventoryPurchasingView
+                  currentUser={currentUser}
+                  products={state.products}
+                  suppliers={state.suppliers}
+                  purchases={state.purchases}
+                  onAdjustStock={handleAdjustStock}
+                  onReceivePurchase={handleReceivePurchase}
+                />
+              )}
+            {activeTab === "reports" && perms.canViewReports && (
+              <ReportsAuditView
+                sales={state.sales}
+                shifts={state.shifts}
+                products={state.products}
+                auditLog={state.auditLog}
+              />
+            )}
+          </>
+        )}
+      </main>
+
+      {modal && (
+        <UsersSupportModal
+          mode={modal}
+          users={state.users}
+          canManageUsers={perms.canManageUsers}
+          onClose={() => setModal(null)}
+          onAddUser={(u) =>
+            setState((prev) => ({
+              ...prev,
+              users: [...prev.users, u],
+              auditLog: [
+                createAuditEntry(
+                  "user_updated",
+                  currentUser,
+                  `Usuario creado: ${u.name} (${ROLE_LABELS[u.role]}).`
+                ),
+                ...prev.auditLog,
+              ],
+            }))
+          }
+          onToggleUser={(userId) =>
+            setState((prev) => ({
+              ...prev,
+              users: prev.users.map((u) =>
+                u.id === userId ? { ...u, active: !u.active } : u
+              ),
+            }))
+          }
+        />
+      )}
+    </div>
+  );
+}
+
+export default App;
