@@ -4,23 +4,23 @@
 
 ## 1. ¿Cómo describirías tu app si fuera una persona o un lugar?
 *(Elige o escribe 3 palabras. Ej.: "Cálida, rápida y confiable" o "Moderna, minimalista y seria")*
-- **3 palabras clave:**
-- **¿A qué marcas o apps te gustaría que se pareciera en sensación?** *(Opcional)*:
-- **¿Qué NO quieres que parezca?** *(Ej.: "No quiero que parezca un Excel aburrido ni un banco frío")*:
+- **3 palabras clave:** Sobria, profesional y rápida.
+- **¿A qué marcas o apps te gustaría que se pareciera en sensación?** *(Opcional)*: Herramienta de punto de venta moderna y clara, fácil de adoptar viniendo de `eleventa` pero mucho más ordenada y visual.
+- **¿Qué NO quieres que parezca?** *(Ej.: "No quiero que parezca un Excel aburrido ni un banco frío")*: No debe verse sobrecargada, lenta, con botones diminutos ni como una plantilla genérica oscura difícil de leer bajo luz de mostrador.
 
 ## 2. Colores de tu Marca
-*(Si no tienes colores todavía, dile a la IA el giro de tu negocio y pídele 2 o 3 propuestas para elegir).*
-- **Color principal (botones importantes, encabezados):**
-- **Color de apoyo / acento (detalles, etiquetas):**
-- **Estilo del fondo:** [ ] Claro y limpio   [ ] Oscuro / Nocturno   [ ] Cálido / Crema
+*(Propuesta sobria y profesional para ferretería de alto flujo)*
+- **Color principal (botones importantes, encabezados):** Azul Pizarra / Acero profundo (`#1E293B` / `#0F172A`) — transmite orden, seriedad y confianza.
+- **Color de apoyo / acento (detalles, etiquetas, acción de cobro):** Ámbar / Naranja industrial sobrio (`#D97706`) y Verde Esmeralda (`#059669`) para confirmaciones y cobros.
+- **Estilo del fondo:** [x] Claro y limpio   [ ] Oscuro / Nocturno   [ ] Cálido / Crema
 
 ## 3. Tipografía y Tono de Voz
-- **Estilo de letra:** [ ] Moderna y redonda   [ ] Seria y corporativa   [ ] Editorial / Elegante
+- **Estilo de letra:** [ ] Moderna y redonda   [x] Seria y corporativa   [ ] Editorial / Elegante
 - **Cómo le habla la app al usuario:**
   - [ ] De "tú" cercano y amigable *(ej. "¡Listo! Tu pedido quedó guardado")*
-  - [ ] De "usted" respetuoso *(ej. "Registro guardado correctamente")*
-  - [ ] Directo y corto *(ej. "Guardado")*
+  - [x] De "usted" respetuoso *(ej. "Venta registrada correctamente")*
+  - [x] Directo y corto *(ej. "Cobro registrado — Cambio: \$45.00")*
 
 ## 4. Detalles Clave de Experiencia
-- **¿Dónde se va a usar más?** [ ] En celular con una mano   [ ] En tablet de mostrador   [ ] En computadora con teclado y ratón
-- **Regla de oro:** Mantener siempre botones claros (texto + ícono), alto contraste y textos en español cotidiano (sin tecnicismos).
+- **¿Dónde se va a usar más?** [ ] En celular con una mano   [x] En tablet de mostrador   [x] En computadora con teclado y ratón
+- **Regla de oro:** Priorizar la **velocidad en mostrador** (pocos clics, atajos de teclado, buscador inmediato), botones claros (texto + ícono), alto contraste y textos en español cotidiano (sin tecnicismos).

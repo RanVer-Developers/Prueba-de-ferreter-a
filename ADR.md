@@ -5,16 +5,19 @@
 ---
 
 ## Decisión 1: Plataformas de la Versión 1
-- **Fecha:**
-- **¿Qué decidimos?** *(ej. Empezar en Web + Android con Capacitor, y dejar iOS/Escritorio para después)*
-- **¿Por qué?** *(ej. Todos los empleados usan Android en mostrador)*
+- **Fecha:** 2026-11-24
+- **¿Qué decidimos?** Aplicación Web / PWA responsiva enfocada en computadora de mostrador (teclado y ratón) y tablet.
+- **¿Por qué?** Ferre Alfredo atiende muchos clientes en mostrador y necesita máxima velocidad operativa y facilidad de adopción viniendo de `eleventa`.
 
 ## Decisión 2: Dónde se guardan los datos
-- **Fecha:**
-- **¿Qué decidimos?** *(ej. Firebase para entrar con cuenta y guardar en la nube + copia local para trabajar sin internet)*
-- **¿Por qué?**
+- **Fecha:** 2026-11-24
+- **¿Qué decidimos?** En la Versión 1 se guarda localmente en el dispositivo (modo offline-first ante intermitencia de internet), dejando la estructura lista para conectar a Firebase (Auth + Firestore) en la Versión 2.
+- **¿Por qué?** Permite salir rápido a operar sin frenar por la integración en la nube, garantizando que nunca se detenga el cobro si falla el internet.
 
 ## Decisión 3: Qué NO vamos a construir todavía
-- **Fecha:**
-- **¿Qué decidimos dejar fuera?** *(ej. Facturación automática y envíos por WhatsApp quedan para la Versión 2)*
-- **¿Por qué?** *(Para salir rápido y probar con usuarios reales)*
+- **Fecha:** 2026-11-24
+- **¿Qué decidimos dejar fuera?**
+  1. Unidades de transporte, repartos y mantenimiento de unidades (pasa a Versión 2).
+  2. Conexión activa a Firebase en la nube (pasa a Versión 2).
+  3. Facturación electrónica (CFDI) a clientes.
+- **¿Por qué?** Entregar valor rápido en lo más urgente del negocio: velocidad en mostrador, caja, inventario, compras, indicadores y control anti-robo.

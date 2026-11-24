@@ -3,30 +3,32 @@
 > Completar este documento antes de escribir código. Sirve para alinear al cliente, Producto y Desarrollo.
 
 ## 1. Datos del Cliente y Negocio
-- **Nombre del negocio:**
-- **Giro:** (ej. Ferretería, Consultorio, Taller, Tienda de abarrotes)
-- **Ciudad:**
-- **Contacto principal:**
-- **Cómo llevan el control hoy:** (ej. Libreta, Excel, WhatsApp, otro sistema)
+- **Nombre del negocio:** Ferre Alfredo
+- **Giro:** Ferretería (alto volumen de clientes en mostrador)
+- **Ciudad:** *(Por definir si aplica)*
+- **Contacto principal:** Dueño / Administración de Ferre Alfredo
+- **Cómo llevan el control hoy:** Sistema `eleventa`
 
 ## 2. Problema Principal a Resolver
-- *¿Qué es lo que más tiempo les quita o más errores les causa hoy?*
+- Agilizar la atención en mostrador para muchos clientes sin sacrificar el control total del negocio (caja, inventario, compras e indicadores), evitando robos o mermas mediante permisos estrictos por puesto y registro de movimientos, y tolerando intermitencias de internet.
 
 ## 3. Alcance del MVP (Versión 1 — Precio de entrada)
 *Regla: Solo lo indispensable para que el cliente empiece a usar la app y vea valor rápido.*
-- [ ] Módulo 1:
-- [ ] Módulo 2:
-- [ ] Módulo 3:
+- [x] **Venta a mostrador ultrarrápida:** Búsqueda ágil de productos, atajos de teclado, cobro rápido y experiencia amigable para empleados acostumbrados a `eleventa`.
+- [x] **Caja y Control de Efectivo:** Apertura/corte de caja, registro de entradas/salidas, control estricto de cancelaciones, descuentos y diferencias.
+- [x] **Control de Inventarios y Compras a Proveedores:** Catálogo de productos, registro de compras para surtir stock, alertas de stock bajo y ajustes auditados por bodeguero/encargado.
+- [x] **Usuarios, Permisos y Bitácora Anti-Robo:** Roles diferenciados (**Dueño, Encargado, Cajera, Vendedor, Bodeguero, Chofer**) con registro de quién realizó cada acción sensible.
+- [x] **Indicadores del Negocio (Tablero):** Ventas del día/mes, utilidad estimada, productos más vendidos, cortes de caja y alertas de inventario.
+- [x] **Modo Local / Offline-First:** Operación continua aunque haya intermitencia de internet (almacenamiento local en V1).
 
-## 4. Módulos Opcionales / Crecimiento Futuro (Servicios con costo extra)
-- [ ] Respaldo y sincronización en la nube
-- [ ] Multi-sucursal / Multi-usuario
-- [ ] Reportes avanzados / Exportación contable
-- [ ] Recordatorios automáticos (WhatsApp / SMS)
-- [ ] Soporte remoto prioritario
+## 4. Módulos Opcionales / Crecimiento Futuro (Versión 2 / Upsells)
+- [ ] **Sincronización en la nube con Firebase:** Conexión en tiempo real a Firebase (Auth + Firestore) manteniendo compatibilidad con trabajo sin internet.
+- [ ] **Unidades de Transporte, Repartos y Mantenimiento:** Asignación de pedidos a camionetas/choferes, seguimiento de entregas y bitácora de mantenimiento de unidades.
+- [ ] **Facturación electrónica (CFDI) a clientes**
+- [ ] **Multi-sucursal / Reportes avanzados / Notificaciones por WhatsApp**
 
 ## 5. Requisitos Técnicos y Módulos Reutilizables
-- **Plataformas objetivo:** [ ] Web / PWA  [ ] Android  [ ] iOS  [ ] Escritorio
-- **¿Requiere funcionar sin internet (Offline-first)?** Sí / No
+- **Plataformas objetivo:** [x] Web / PWA  [ ] Android  [ ] iOS  [ ] Escritorio
+- **¿Requiere funcionar sin internet (Offline-first)?** Sí (intermitencia de internet)
 - **Módulos del monorepo RanVer a reutilizar:**
-  - `...`
+  - Por verificar en catálogo `RanVer-Developers/Modulos_reutilizables` al iniciar Paso 1 (`inventory`, `sales`/`pos`, `cash-register`, `suppliers`/`purchases`, `audit`, `auth`).
