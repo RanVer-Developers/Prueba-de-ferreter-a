@@ -1,0 +1,79 @@
+name: Verificación de Calidad (CI)
+
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [main, dev]
+
+jobs:
+  verify:
+    name: Typecheck, Tests y Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Verificar si existe proyecto Node/TS
+        id: check_pkg
+        run: |
+          if [ -f "package.json" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "No existe package.json todavía (Fase Paso 0). Omitiendo checks de código."
+          fi
+
+      - name: Configurar Node.js
+        if: steps.check_pkg.outputs.exists == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar pnpm (si aplica)
+        if: steps.check_pkg.outputs.exists == 'true' && hashFiles('pnpm-lock.yaml') != ''
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Instalar dependencias
+        if: steps.check_pkg.outputs.exists == 'true'
+        run: |
+          if [ -f "pnpm-lock.yaml" ]; then
+            pnpm install --frozen-lockfile
+          elif [ -f "yarn.lock" ]; then
+            yarn install --frozen-lockfile
+          elif [ -f "package-lock.json" ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Ejecutar scripts de verificación
+        if: steps.check_pkg.outputs.exists == 'true'
+        run: |
+          run_if_present() {
+            local script_name="$1"
+            if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts['$script_name'] ? 0 : 1)"; then
+              echo ">>> Ejecutando $script_name"
+              if [ -f "pnpm-lock.yaml" ]; then
+                pnpm run "$script_name"
+              elif [ -f "yarn.lock" ]; then
+                yarn "$script_name"
+              else
+                npm run "$script_name"
+              fi
+            else
+              echo ">>> Script '$script_name' no definido, omitido."
+            fi
+          }
+
+          run_if_present "typecheck"
+          run_if_present "lint"
+          if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts['test:run'] ? 0 : 1)"; then
+            run_if_present "test:run"
+          else
+            run_if_present "test"
+          fi
+          run_if_present "build"
