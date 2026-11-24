@@ -15,7 +15,6 @@ import {
 import { toast } from "sonner";
 import { generateId } from "@modulos/core-shared";
 import {
-  ROLE_PERMISSIONS,
   addCents,
   formatMXN,
   multiplyCents,
@@ -24,6 +23,7 @@ import {
   subtractCents,
 } from "../core/ferre-store.js";
 import type {
+  BusinessSettings,
   CartItem,
   CashShift,
   FerreProduct,
@@ -36,6 +36,7 @@ interface PosViewProps {
   currentUser: FerreUser;
   users: FerreUser[];
   products: FerreProduct[];
+  settings: BusinessSettings;
   openShift: CashShift | undefined;
   parkedOrders: ParkedOrder[];
   onCompleteSale: (payload: {
@@ -53,13 +54,14 @@ export function PosView({
   currentUser,
   users,
   products,
+  settings,
   openShift,
   parkedOrders,
   onCompleteSale,
   onParkOrder,
   onResumeParkedOrder,
 }: PosViewProps) {
-  const perms = ROLE_PERMISSIONS[currentUser.role];
+  const perms = currentUser.permissions;
   const [query, setQuery] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discountPesos, setDiscountPesos] = useState("");
@@ -111,7 +113,7 @@ export function PosView({
   }, [cart.length, perms.canCollect]);
 
   const addToCart = (product: FerreProduct, qty = 1) => {
-    if (product.stock <= 0) {
+    if (!settings.allowNegativeStock && product.stock <= 0) {
       toast.error(`Sin existencias de "${product.name}".`);
       return;
     }
@@ -119,7 +121,7 @@ export function PosView({
       const existing = prev.find((i) => i.productId === product.id);
       if (existing) {
         const nextQty = Number((existing.quantity + qty).toFixed(3));
-        if (nextQty > product.stock) {
+        if (!settings.allowNegativeStock && nextQty > product.stock) {
           toast.error(
             `Solo hay ${product.stock} ${product.unit} disponibles de "${product.name}".`
           );
@@ -328,7 +330,7 @@ export function PosView({
                     key={p.id}
                     type="button"
                     onClick={() => addToCart(p, 1)}
-                    disabled={p.stock <= 0}
+                    disabled={!settings.allowNegativeStock && p.stock <= 0}
                     className="w-full px-4 py-3 flex items-center justify-between gap-3 text-left hover:bg-slate-50 disabled:opacity-50 active:bg-slate-100 transition"
                   >
                     <div className="min-w-0">

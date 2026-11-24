@@ -5,8 +5,8 @@ import {
   LifeBuoy,
   LogOut,
   Package,
+  Settings,
   ShoppingCart,
-  Users,
   Wifi,
   WifiOff,
   Wrench,
@@ -18,9 +18,9 @@ import { InventoryPurchasingView } from "./components/InventoryPurchasingView.js
 import { PinLoginScreen } from "./components/PinLoginScreen.js";
 import { PosView, buildParkedOrder } from "./components/PosView.js";
 import { ReportsAuditView } from "./components/ReportsAuditView.js";
+import { SettingsView } from "./components/SettingsView.js";
 import { UsersSupportModal } from "./components/UsersSupportModal.js";
 import {
-  ROLE_PERMISSIONS,
   addCents,
   computeShiftExpectedCash,
   createAuditEntry,
@@ -33,19 +33,22 @@ import {
 } from "./core/ferre-store.js";
 import {
   ROLE_LABELS,
+  type BusinessSettings,
   type CartItem,
+  type FerreProduct,
   type FerreState,
+  type FerreSupplier,
   type FerreUser,
   type PaymentMethod,
 } from "./core/ferre-types.js";
 
-type ActiveTab = "pos" | "cashier" | "inventory" | "reports";
+type ActiveTab = "pos" | "cashier" | "inventory" | "reports" | "settings";
 
 export function App() {
   const [state, setState] = useState<FerreState>(() => loadFerreState());
-  const [currentUser, setCurrentUser] = useState<FerreUser | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>("pos");
-  const [modal, setModal] = useState<"users" | "support" | null>(null);
+  const [supportOpen, setSupportOpen] = useState(false);
   const [isOnline, setIsOnline] = useState<boolean>(() => navigator.onLine);
 
   useEffect(() => {
@@ -63,6 +66,11 @@ export function App() {
     };
   }, []);
 
+  const currentUser = useMemo(
+    () => state.users.find((u) => u.id === currentUserId) ?? null,
+    [state.users, currentUserId]
+  );
+
   const openShift = useMemo(
     () => getOpenShift(state.shifts),
     [state.shifts]
@@ -75,10 +83,12 @@ export function App() {
         <PinLoginScreen
           users={state.users}
           onLogin={(user) => {
-            setCurrentUser(user);
-            const perms = ROLE_PERMISSIONS[user.role];
+            setCurrentUserId(user.id);
+            const perms = user.permissions;
             if (perms.canSell) setActiveTab("pos");
             else if (perms.canManageInventory) setActiveTab("inventory");
+            else if (perms.canManageSettings || perms.canManageUsers)
+              setActiveTab("settings");
             else setActiveTab("pos");
           }}
         />
@@ -86,7 +96,7 @@ export function App() {
     );
   }
 
-  const perms = ROLE_PERMISSIONS[currentUser.role];
+  const perms = currentUser.permissions;
 
   const handleCompleteSale = (payload: {
     items: CartItem[];
@@ -243,7 +253,10 @@ export function App() {
 
     setState((prev) => {
       const nextAudit = [...prev.auditLog];
-      if (differenceCents !== 0) {
+      if (
+        Math.abs(differenceCents) >
+        prev.settings.cashDiscrepancyToleranceCents
+      ) {
         nextAudit.unshift(
           createAuditEntry(
             "cash_shift_closed_diff",
@@ -347,6 +360,31 @@ export function App() {
     toast.success("Inventario actualizado y registrado en bitácora.");
   };
 
+  const handleSaveProduct = (product: FerreProduct, isNew: boolean) => {
+    setState((prev) => ({
+      ...prev,
+      products: isNew
+        ? [product, ...prev.products]
+        : prev.products.map((p) => (p.id === product.id ? product : p)),
+      auditLog: [
+        createAuditEntry(
+          "product_updated",
+          currentUser,
+          `${isNew ? "Alta" : "Edición"} de producto "${product.name}" (${product.sku}) — Precio: ${formatMXN(product.priceCents)}.`
+        ),
+        ...prev.auditLog,
+      ],
+    }));
+    toast.success(isNew ? "Producto agregado." : "Producto actualizado.");
+  };
+
+  const handleAddSupplier = (supplier: FerreSupplier) => {
+    setState((prev) => ({
+      ...prev,
+      suppliers: [...prev.suppliers, supplier],
+    }));
+  };
+
   const handleReceivePurchase = (payload: {
     supplierId: string;
     productId: string;
@@ -358,6 +396,15 @@ export function App() {
     if (!sup || !prod) return;
 
     const totalCents = multiplyCents(payload.unitCostCents, payload.quantity);
+    const nextStock = Number((prod.stock + payload.quantity).toFixed(3));
+    const nextCostCents =
+      state.settings.inventoryValuation === "CMP" && nextStock > 0
+        ? Math.round(
+            (prod.stock * prod.costCents +
+              payload.quantity * payload.unitCostCents) /
+              nextStock
+          )
+        : payload.unitCostCents;
 
     setState((prev) => ({
       ...prev,
@@ -365,8 +412,8 @@ export function App() {
         p.id === prod.id
           ? {
               ...p,
-              stock: Number((p.stock + payload.quantity).toFixed(3)),
-              costCents: payload.unitCostCents,
+              stock: nextStock,
+              costCents: nextCostCents,
             }
           : p
       ),
@@ -393,13 +440,45 @@ export function App() {
         createAuditEntry(
           "purchase_received",
           currentUser,
-          `Entrada de ${payload.quantity} ${prod.unit} de "${prod.name}" (${sup.name}) por ${formatMXN(totalCents)}.`
+          `Entrada de ${payload.quantity} ${prod.unit} de "${prod.name}" (${sup.name}) por ${formatMXN(totalCents)} [${prev.settings.inventoryValuation}].`
         ),
         ...prev.auditLog,
       ],
     }));
 
     toast.success(`Compra sumada al inventario (+${payload.quantity} ${prod.unit}).`);
+  };
+
+  const handleUpdateSettings = (nextSettings: BusinessSettings) => {
+    setState((prev) => ({
+      ...prev,
+      settings: nextSettings,
+      auditLog: [
+        createAuditEntry(
+          "settings_updated",
+          currentUser,
+          `Configuración actualizada: Costeo ${nextSettings.inventoryValuation}, Arqueo ciego ${nextSettings.blindCashCount ? "Sí" : "No"}, Stock negativo ${nextSettings.allowNegativeStock ? "Permitido" : "Bloqueado"}.`
+        ),
+        ...prev.auditLog,
+      ],
+    }));
+  };
+
+  const handleSaveUser = (user: FerreUser, isNew: boolean) => {
+    setState((prev) => ({
+      ...prev,
+      users: isNew
+        ? [...prev.users, user]
+        : prev.users.map((u) => (u.id === user.id ? user : u)),
+      auditLog: [
+        createAuditEntry(
+          "user_updated",
+          currentUser,
+          `${isNew ? "Usuario creado" : "Usuario/permisos editados"}: ${user.name} (${ROLE_LABELS[user.role]}).`
+        ),
+        ...prev.auditLog,
+      ],
+    }));
   };
 
   const navItems: Array<{
@@ -425,12 +504,18 @@ export function App() {
       id: "reports",
       label: "Indicadores y Bitácora",
       icon: BarChart3,
-      visible: perms.canViewReports,
+      visible: perms.canViewReports || perms.canViewAudit,
+    },
+    {
+      id: "settings",
+      label: "Configuración",
+      icon: Settings,
+      visible: perms.canManageUsers || perms.canManageSettings,
     },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <Toaster position="top-right" richColors />
 
       {/* Barra superior */}
@@ -442,7 +527,7 @@ export function App() {
             </div>
             <div>
               <span className="font-bold text-base tracking-tight block leading-none">
-                Ferre Alfredo
+                {state.settings.businessName}
               </span>
               <span className="text-xs text-slate-300">
                 {currentUser.name} • {ROLE_LABELS[currentUser.role]}
@@ -470,20 +555,9 @@ export function App() {
               )}
             </span>
 
-            {perms.canManageUsers && (
-              <button
-                type="button"
-                onClick={() => setModal("users")}
-                className="min-h-10 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 transition"
-              >
-                <Users className="w-4 h-4" strokeWidth={1.75} />
-                Usuarios
-              </button>
-            )}
-
             <button
               type="button"
-              onClick={() => setModal("support")}
+              onClick={() => setSupportOpen(true)}
               className="min-h-10 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 transition"
             >
               <LifeBuoy className="w-4 h-4 text-amber-400" strokeWidth={1.75} />
@@ -492,7 +566,7 @@ export function App() {
 
             <button
               type="button"
-              onClick={() => setCurrentUser(null)}
+              onClick={() => setCurrentUserId(null)}
               className="min-h-10 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 transition"
             >
               <LogOut className="w-4 h-4" strokeWidth={1.75} />
@@ -549,6 +623,7 @@ export function App() {
                 currentUser={currentUser}
                 users={state.users}
                 products={state.products}
+                settings={state.settings}
                 openShift={openShift}
                 parkedOrders={state.parkedOrders}
                 onCompleteSale={handleCompleteSale}
@@ -561,6 +636,7 @@ export function App() {
                 <CashierView
                   currentUser={currentUser}
                   users={state.users}
+                  settings={state.settings}
                   openShift={openShift}
                   shifts={state.shifts}
                   sales={state.sales}
@@ -574,53 +650,47 @@ export function App() {
               (perms.canManageInventory || perms.canReceivePurchase) && (
                 <InventoryPurchasingView
                   currentUser={currentUser}
+                  settings={state.settings}
                   products={state.products}
                   suppliers={state.suppliers}
                   purchases={state.purchases}
                   onAdjustStock={handleAdjustStock}
+                  onSaveProduct={handleSaveProduct}
+                  onAddSupplier={handleAddSupplier}
                   onReceivePurchase={handleReceivePurchase}
                 />
               )}
-            {activeTab === "reports" && perms.canViewReports && (
-              <ReportsAuditView
-                sales={state.sales}
-                shifts={state.shifts}
-                products={state.products}
-                auditLog={state.auditLog}
-              />
-            )}
+            {activeTab === "reports" &&
+              (perms.canViewReports || perms.canViewAudit) && (
+                <ReportsAuditView
+                  sales={state.sales}
+                  shifts={state.shifts}
+                  products={state.products}
+                  auditLog={state.auditLog}
+                />
+              )}
+            {activeTab === "settings" &&
+              (perms.canManageUsers || perms.canManageSettings) && (
+                <SettingsView
+                  currentUser={currentUser}
+                  state={state}
+                  onUpdateSettings={handleUpdateSettings}
+                  onSaveUser={handleSaveUser}
+                  onImportBackup={(nextState) => setState(nextState)}
+                />
+              )}
           </>
         )}
       </main>
 
-      {modal && (
+      {supportOpen && (
         <UsersSupportModal
-          mode={modal}
+          mode="support"
           users={state.users}
-          canManageUsers={perms.canManageUsers}
-          onClose={() => setModal(null)}
-          onAddUser={(u) =>
-            setState((prev) => ({
-              ...prev,
-              users: [...prev.users, u],
-              auditLog: [
-                createAuditEntry(
-                  "user_updated",
-                  currentUser,
-                  `Usuario creado: ${u.name} (${ROLE_LABELS[u.role]}).`
-                ),
-                ...prev.auditLog,
-              ],
-            }))
-          }
-          onToggleUser={(userId) =>
-            setState((prev) => ({
-              ...prev,
-              users: prev.users.map((u) =>
-                u.id === userId ? { ...u, active: !u.active } : u
-              ),
-            }))
-          }
+          canManageUsers={false}
+          onClose={() => setSupportOpen(false)}
+          onAddUser={() => {}}
+          onToggleUser={() => {}}
         />
       )}
     </div>

@@ -15,12 +15,54 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   driver: "Chofer",
 };
 
+export interface UserPermissions {
+  canSell: boolean;
+  canCollect: boolean;
+  canOpenCloseShift: boolean;
+  canCashMovement: boolean;
+  canApplyDiscount: boolean;
+  canCancelSale: boolean;
+  canManageInventory: boolean;
+  canReceivePurchase: boolean;
+  canViewReports: boolean;
+  canViewAudit: boolean;
+  canManageUsers: boolean;
+  canManageSettings: boolean;
+}
+
+export const PERMISSION_LABELS: Record<keyof UserPermissions, string> = {
+  canSell: "Vender en mostrador",
+  canCollect: "Cobrar en caja",
+  canOpenCloseShift: "Abrir y cerrar caja",
+  canCashMovement: "Registrar entradas/retiros",
+  canApplyDiscount: "Aplicar descuentos",
+  canCancelSale: "Cancelar ventas",
+  canManageInventory: "Editar productos y ajustar stock",
+  canReceivePurchase: "Recibir compras a proveedores",
+  canViewReports: "Ver indicadores y utilidades",
+  canViewAudit: "Ver bitácora anti-robo",
+  canManageUsers: "Administrar usuarios y permisos",
+  canManageSettings: "Configurar reglas del negocio",
+};
+
 export interface FerreUser {
   id: string;
   name: string;
   role: UserRole;
   pin: string;
   active: boolean;
+  permissions: UserPermissions;
+}
+
+export interface BusinessSettings {
+  businessName: string;
+  inventoryValuation: "FIFO" | "CMP";
+  allowNegativeStock: boolean;
+  blindCashCount: boolean;
+  cashDiscrepancyToleranceCents: number;
+  maxDrawerCashCents: number;
+  requireSupervisorPinForCancel: boolean;
+  requireSupervisorPinForDiscount: boolean;
 }
 
 export interface FerreProduct {
@@ -132,7 +174,9 @@ export interface AuditEntry {
     | "cash_shift_closed_diff"
     | "inventory_adjusted"
     | "purchase_received"
-    | "user_updated";
+    | "user_updated"
+    | "product_updated"
+    | "settings_updated";
   userName: string;
   userRole: UserRole;
   details: string;
@@ -140,8 +184,9 @@ export interface AuditEntry {
 }
 
 export interface FerreState {
-  schemaVersion: 1;
+  schemaVersion: 2;
   nextFolio: number;
+  settings: BusinessSettings;
   users: FerreUser[];
   products: FerreProduct[];
   suppliers: FerreSupplier[];

@@ -9,16 +9,21 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  ROLE_PERMISSIONS,
   computeShiftExpectedCash,
   formatMXN,
   pesosToCents,
 } from "../core/ferre-store.js";
-import type { CashShift, FerreSale, FerreUser } from "../core/ferre-types.js";
+import type {
+  BusinessSettings,
+  CashShift,
+  FerreSale,
+  FerreUser,
+} from "../core/ferre-types.js";
 
 interface CashierViewProps {
   currentUser: FerreUser;
   users: FerreUser[];
+  settings: BusinessSettings;
   openShift: CashShift | undefined;
   shifts: CashShift[];
   sales: FerreSale[];
@@ -35,6 +40,7 @@ interface CashierViewProps {
 export function CashierView({
   currentUser,
   users,
+  settings,
   openShift,
   shifts,
   sales,
@@ -43,7 +49,7 @@ export function CashierView({
   onCloseShift,
   onCancelSale,
 }: CashierViewProps) {
-  const perms = ROLE_PERMISSIONS[currentUser.role];
+  const perms = currentUser.permissions;
   const [floatPesos, setFloatPesos] = useState("1000");
   const [movType, setMovType] = useState<"deposit" | "withdrawal">("withdrawal");
   const [movAmountPesos, setMovAmountPesos] = useState("");
@@ -227,10 +233,25 @@ export function CashierView({
                 <span className="font-semibold text-slate-900">
                   Efectivo esperado en cajón
                 </span>
-                <span className="font-bold text-slate-900 tabular-nums">
-                  {formatMXN(expectedCashCents)}
-                </span>
+                {settings.blindCashCount &&
+                currentUser.role !== "owner" &&
+                currentUser.role !== "manager" ? (
+                  <span className="text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded">
+                    Oculto (Arqueo ciego)
+                  </span>
+                ) : (
+                  <span className="font-bold text-slate-900 tabular-nums">
+                    {formatMXN(expectedCashCents)}
+                  </span>
+                )}
               </div>
+              {settings.maxDrawerCashCents > 0 &&
+                expectedCashCents > settings.maxDrawerCashCents && (
+                  <p className="text-xs font-medium text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    El cajón superó {formatMXN(settings.maxDrawerCashCents)}. Se
+                    recomienda hacer un retiro parcial.
+                  </p>
+                )}
             </div>
 
             <form onSubmit={handleClose} className="space-y-3 pt-2 border-t border-slate-200">

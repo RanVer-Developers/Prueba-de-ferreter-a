@@ -3,6 +3,7 @@ import { Copy, LifeBuoy, UserPlus, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { generateId } from "@modulos/core-shared";
 import { buildTechnicalReport } from "../core/error-log.js";
+import { ROLE_PERMISSIONS } from "../core/ferre-store.js";
 import {
   ROLE_LABELS,
   type FerreUser,
@@ -62,6 +63,7 @@ export function UsersSupportModal({
       role,
       pin,
       active: true,
+      permissions: { ...ROLE_PERMISSIONS[role] },
     });
     setName("");
     setPin("");

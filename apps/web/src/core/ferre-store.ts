@@ -1,24 +1,10 @@
-import {
-  resolveAuthRbacFeatures,
-} from "@modulos/core-auth-rbac";
-import {
-  resolveCashierFeatures,
-} from "@modulos/core-cashier";
-import {
-  resolveCatalogFeatures,
-} from "@modulos/core-catalog";
-import {
-  resolveInventoryFeatures,
-} from "@modulos/core-inventory";
-import {
-  resolveOrderFeatures,
-} from "@modulos/core-orders";
-import {
-  resolvePurchasingFeatures,
-} from "@modulos/core-purchasing";
-import {
-  resolveReportFeatureFlags,
-} from "@modulos/core-reports";
+import { resolveAuthRbacFeatures } from "@modulos/core-auth-rbac";
+import { resolveCashierFeatures } from "@modulos/core-cashier";
+import { resolveCatalogFeatures } from "@modulos/core-catalog";
+import { resolveInventoryFeatures } from "@modulos/core-inventory";
+import { resolveOrderFeatures } from "@modulos/core-orders";
+import { resolvePurchasingFeatures } from "@modulos/core-purchasing";
+import { resolveReportFeatureFlags } from "@modulos/core-reports";
 import {
   Money,
   decimalToCentsHalfEven,
@@ -27,28 +13,36 @@ import {
 } from "@modulos/core-shared";
 import type {
   AuditEntry,
+  BusinessSettings,
   CashShift,
   FerreProduct,
   FerreState,
   FerreUser,
+  UserPermissions,
   UserRole,
 } from "./ferre-types.js";
 
-const STORAGE_KEY = "ferre_alfredo_state_v1";
+const STORAGE_KEY = "ferre_alfredo_state_v2";
 
-/**
- * Perfiles activos de los módulos reutilizables @modulos/* para Ferre Alfredo V1.
- * Si el cliente solicita una función de nivel superior, se habilita aquí primero.
- */
-export const ACTIVE_MODULE_PROFILES = {
-  auth: resolveAuthRbacFeatures("INTERMEDIATE"),
-  catalog: resolveCatalogFeatures({ multiBarcodeLookup: true }),
-  orders: resolveOrderFeatures({ parkedOrders: true, lineDiscounts: true }),
-  cashier: resolveCashierFeatures("INTERMEDIATE"),
-  inventory: resolveInventoryFeatures("INTERMEDIATE"),
-  purchasing: resolvePurchasingFeatures("BASIC"),
-  reports: resolveReportFeatureFlags("INTERMEDIATE"),
-} as const;
+export function resolveActiveModuleProfiles(settings: BusinessSettings) {
+  return {
+    auth: resolveAuthRbacFeatures("INTERMEDIATE"),
+    catalog: resolveCatalogFeatures({ multiBarcodeLookup: true }),
+    orders: resolveOrderFeatures({ parkedOrders: true, lineDiscounts: true }),
+    cashier: {
+      ...resolveCashierFeatures("INTERMEDIATE"),
+      blindCounts: settings.blindCashCount,
+    },
+    inventory: resolveInventoryFeatures({
+      fifoValuation: settings.inventoryValuation === "FIFO",
+      negativeStock: settings.allowNegativeStock,
+      blindCounts: settings.blindCashCount,
+      replenishmentSuggestions: true,
+    }),
+    purchasing: resolvePurchasingFeatures("BASIC"),
+    reports: resolveReportFeatureFlags("INTERMEDIATE"),
+  };
+}
 
 export function formatMXN(cents: number): string {
   const safeCents = Math.round(cents);
@@ -79,22 +73,7 @@ export function subtractCents(a: number, b: number): number {
   return Math.round(a) - Math.round(b);
 }
 
-export const ROLE_PERMISSIONS: Record<
-  UserRole,
-  {
-    canSell: boolean;
-    canCollect: boolean;
-    canOpenCloseShift: boolean;
-    canCashMovement: boolean;
-    canApplyDiscount: boolean;
-    canCancelSale: boolean;
-    canManageInventory: boolean;
-    canReceivePurchase: boolean;
-    canViewReports: boolean;
-    canViewAudit: boolean;
-    canManageUsers: boolean;
-  }
-> = {
+export const ROLE_PERMISSIONS: Record<UserRole, UserPermissions> = {
   owner: {
     canSell: true,
     canCollect: true,
@@ -107,6 +86,7 @@ export const ROLE_PERMISSIONS: Record<
     canViewReports: true,
     canViewAudit: true,
     canManageUsers: true,
+    canManageSettings: true,
   },
   manager: {
     canSell: true,
@@ -120,6 +100,7 @@ export const ROLE_PERMISSIONS: Record<
     canViewReports: true,
     canViewAudit: true,
     canManageUsers: false,
+    canManageSettings: false,
   },
   cashier: {
     canSell: true,
@@ -133,6 +114,7 @@ export const ROLE_PERMISSIONS: Record<
     canViewReports: false,
     canViewAudit: false,
     canManageUsers: false,
+    canManageSettings: false,
   },
   seller: {
     canSell: true,
@@ -146,6 +128,7 @@ export const ROLE_PERMISSIONS: Record<
     canViewReports: false,
     canViewAudit: false,
     canManageUsers: false,
+    canManageSettings: false,
   },
   warehouse: {
     canSell: false,
@@ -159,6 +142,7 @@ export const ROLE_PERMISSIONS: Record<
     canViewReports: false,
     canViewAudit: false,
     canManageUsers: false,
+    canManageSettings: false,
   },
   driver: {
     canSell: false,
@@ -172,17 +156,71 @@ export const ROLE_PERMISSIONS: Record<
     canViewReports: false,
     canViewAudit: false,
     canManageUsers: false,
+    canManageSettings: false,
   },
 };
 
 export function createSeedState(): FerreState {
+  const settings: BusinessSettings = {
+    businessName: "Ferre Alfredo",
+    inventoryValuation: "CMP",
+    allowNegativeStock: false,
+    blindCashCount: false,
+    cashDiscrepancyToleranceCents: 1000, // $10.00 MXN
+    maxDrawerCashCents: 1000000, // $10,000.00 MXN
+    requireSupervisorPinForCancel: true,
+    requireSupervisorPinForDiscount: true,
+  };
+
   const users: FerreUser[] = [
-    { id: "u-owner", name: "Don Alfredo", role: "owner", pin: "1111", active: true },
-    { id: "u-manager", name: "Jorge (Encargado)", role: "manager", pin: "2222", active: true },
-    { id: "u-cashier", name: "Lupita (Cajera)", role: "cashier", pin: "3333", active: true },
-    { id: "u-seller", name: "Carlos (Vendedor)", role: "seller", pin: "4444", active: true },
-    { id: "u-warehouse", name: "Pedro (Bodega)", role: "warehouse", pin: "5555", active: true },
-    { id: "u-driver", name: "Mateo (Chofer)", role: "driver", pin: "6666", active: true },
+    {
+      id: "u-owner",
+      name: "Don Alfredo",
+      role: "owner",
+      pin: "1111",
+      active: true,
+      permissions: { ...ROLE_PERMISSIONS.owner },
+    },
+    {
+      id: "u-manager",
+      name: "Jorge (Encargado)",
+      role: "manager",
+      pin: "2222",
+      active: true,
+      permissions: { ...ROLE_PERMISSIONS.manager },
+    },
+    {
+      id: "u-cashier",
+      name: "Lupita (Cajera)",
+      role: "cashier",
+      pin: "3333",
+      active: true,
+      permissions: { ...ROLE_PERMISSIONS.cashier },
+    },
+    {
+      id: "u-seller",
+      name: "Carlos (Vendedor)",
+      role: "seller",
+      pin: "4444",
+      active: true,
+      permissions: { ...ROLE_PERMISSIONS.seller },
+    },
+    {
+      id: "u-warehouse",
+      name: "Pedro (Bodega)",
+      role: "warehouse",
+      pin: "5555",
+      active: true,
+      permissions: { ...ROLE_PERMISSIONS.warehouse },
+    },
+    {
+      id: "u-driver",
+      name: "Mateo (Chofer)",
+      role: "driver",
+      pin: "6666",
+      active: true,
+      permissions: { ...ROLE_PERMISSIONS.driver },
+    },
   ];
 
   const products: FerreProduct[] = [
@@ -319,8 +357,9 @@ export function createSeedState(): FerreState {
   ];
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     nextFolio: 101,
+    settings,
     users,
     products,
     suppliers: [
@@ -345,7 +384,7 @@ export function loadFerreState(): FerreState {
       return seed;
     }
     const parsed = JSON.parse(raw) as FerreState;
-    if (!parsed || parsed.schemaVersion !== 1 || !Array.isArray(parsed.users)) {
+    if (!parsed || parsed.schemaVersion !== 2 || !Array.isArray(parsed.users)) {
       const seed = createSeedState();
       saveFerreState(seed);
       return seed;
