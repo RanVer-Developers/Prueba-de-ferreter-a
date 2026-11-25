@@ -28,6 +28,7 @@ export interface UserPermissions {
   canViewAudit: boolean;
   canManageUsers: boolean;
   canManageSettings: boolean;
+  canManageCredit: boolean;
 }
 
 export const PERMISSION_LABELS: Record<keyof UserPermissions, string> = {
@@ -43,6 +44,7 @@ export const PERMISSION_LABELS: Record<keyof UserPermissions, string> = {
   canViewAudit: "Ver bitácora anti-robo",
   canManageUsers: "Administrar usuarios y permisos",
   canManageSettings: "Configurar reglas del negocio",
+  canManageCredit: "Autorizar crédito y congelar cuentas",
 };
 
 export interface FerreUser {
@@ -105,12 +107,35 @@ export interface ParkedOrder {
   totalCents: number;
 }
 
-export type PaymentMethod = "cash" | "card" | "transfer";
+export type PaymentMethod = "cash" | "card" | "transfer" | "credit";
+
+export interface CreditLedgerEntry {
+  id: string;
+  type: "charge" | "payment" | "refund_credit";
+  amountCents: number;
+  reference: string;
+  userName: string;
+  createdAt: string;
+}
+
+export interface FerreCustomer {
+  id: string;
+  name: string;
+  phone: string;
+  creditEnabled: boolean;
+  creditLimitCents: number;
+  creditTermDays: number;
+  creditBalanceCents: number;
+  creditFrozen: boolean;
+  ledger: CreditLedgerEntry[];
+}
 
 export interface FerreSale {
   id: string;
   folio: number;
   shiftId: string;
+  customerId?: string;
+  customerName?: string;
   items: CartItem[];
   subtotalCents: number;
   discountCents: number;
@@ -176,7 +201,9 @@ export interface AuditEntry {
     | "purchase_received"
     | "user_updated"
     | "product_updated"
-    | "settings_updated";
+    | "settings_updated"
+    | "credit_payment"
+    | "customer_updated";
   userName: string;
   userRole: UserRole;
   details: string;
@@ -190,6 +217,7 @@ export interface FerreState {
   users: FerreUser[];
   products: FerreProduct[];
   suppliers: FerreSupplier[];
+  customers: FerreCustomer[];
   shifts: CashShift[];
   sales: FerreSale[];
   parkedOrders: ParkedOrder[];

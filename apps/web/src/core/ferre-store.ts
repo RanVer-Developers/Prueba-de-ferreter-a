@@ -1,6 +1,7 @@
 import { resolveAuthRbacFeatures } from "@modulos/core-auth-rbac";
 import { resolveCashierFeatures } from "@modulos/core-cashier";
 import { resolveCatalogFeatures } from "@modulos/core-catalog";
+import { resolveCustomerFeatures } from "@modulos/core-customers";
 import { resolveInventoryFeatures } from "@modulos/core-inventory";
 import { resolveOrderFeatures } from "@modulos/core-orders";
 import { resolvePurchasingFeatures } from "@modulos/core-purchasing";
@@ -15,6 +16,7 @@ import type {
   AuditEntry,
   BusinessSettings,
   CashShift,
+  FerreCustomer,
   FerreProduct,
   FerreState,
   FerreUser,
@@ -28,6 +30,9 @@ export function resolveActiveModuleProfiles(settings: BusinessSettings) {
   return {
     auth: resolveAuthRbacFeatures("INTERMEDIATE"),
     catalog: resolveCatalogFeatures({ multiBarcodeLookup: true }),
+    customers: resolveCustomerFeatures({
+      creditAccounts: true,
+    }),
     orders: resolveOrderFeatures({ parkedOrders: true, lineDiscounts: true }),
     cashier: {
       ...resolveCashierFeatures("INTERMEDIATE"),
@@ -87,6 +92,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, UserPermissions> = {
     canViewAudit: true,
     canManageUsers: true,
     canManageSettings: true,
+    canManageCredit: true,
   },
   manager: {
     canSell: true,
@@ -101,6 +107,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, UserPermissions> = {
     canViewAudit: true,
     canManageUsers: false,
     canManageSettings: false,
+    canManageCredit: true,
   },
   cashier: {
     canSell: true,
@@ -115,6 +122,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, UserPermissions> = {
     canViewAudit: false,
     canManageUsers: false,
     canManageSettings: false,
+    canManageCredit: false,
   },
   seller: {
     canSell: true,
@@ -129,6 +137,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, UserPermissions> = {
     canViewAudit: false,
     canManageUsers: false,
     canManageSettings: false,
+    canManageCredit: false,
   },
   warehouse: {
     canSell: false,
@@ -143,6 +152,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, UserPermissions> = {
     canViewAudit: false,
     canManageUsers: false,
     canManageSettings: false,
+    canManageCredit: false,
   },
   driver: {
     canSell: false,
@@ -157,6 +167,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, UserPermissions> = {
     canViewAudit: false,
     canManageUsers: false,
     canManageSettings: false,
+    canManageCredit: false,
   },
 };
 
@@ -356,6 +367,51 @@ export function createSeedState(): FerreState {
     },
   ];
 
+  const customers: FerreCustomer[] = [
+    {
+      id: "cust-general",
+      name: "Público en General",
+      phone: "",
+      creditEnabled: false,
+      creditLimitCents: 0,
+      creditTermDays: 0,
+      creditBalanceCents: 0,
+      creditFrozen: false,
+      ledger: [],
+    },
+    {
+      id: "cust-1",
+      name: "Constructora García",
+      phone: "55-2233-4455",
+      creditEnabled: true,
+      creditLimitCents: 1500000, // $15,000.00
+      creditTermDays: 30,
+      creditBalanceCents: 0,
+      creditFrozen: false,
+      ledger: [],
+    },
+    {
+      id: "cust-2",
+      name: "Plomería El Rápido",
+      phone: "55-9988-7766",
+      creditEnabled: true,
+      creditLimitCents: 500000, // $5,000.00
+      creditTermDays: 15,
+      creditBalanceCents: 120000, // $1,200.00 adeudo inicial
+      creditFrozen: false,
+      ledger: [
+        {
+          id: "led-seed-1",
+          type: "charge",
+          amountCents: 120000,
+          reference: "Saldo inicial migrado de eleventa",
+          userName: "Don Alfredo",
+          createdAt: "2026-11-20T10:00:00.000Z",
+        },
+      ],
+    },
+  ];
+
   return {
     schemaVersion: 2,
     nextFolio: 101,
@@ -367,6 +423,7 @@ export function createSeedState(): FerreState {
       { id: "sup-2", name: "Materiales y Cementos del Norte", phone: "55-8765-4321" },
       { id: "sup-3", name: "Eléctrica Industrial del Bajío", phone: "55-4455-6677" },
     ],
+    customers,
     shifts: [],
     sales: [],
     parkedOrders: [],
@@ -389,7 +446,21 @@ export function loadFerreState(): FerreState {
       saveFerreState(seed);
       return seed;
     }
-    return parsed;
+    const seed = createSeedState();
+    return {
+      ...seed,
+      ...parsed,
+      customers: Array.isArray(parsed.customers)
+        ? parsed.customers
+        : seed.customers,
+      users: parsed.users.map((u) => ({
+        ...u,
+        permissions: {
+          ...ROLE_PERMISSIONS[u.role],
+          ...u.permissions,
+        },
+      })),
+    };
   } catch {
     return createSeedState();
   }

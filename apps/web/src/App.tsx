@@ -7,6 +7,7 @@ import {
   Package,
   Settings,
   ShoppingCart,
+  UserCheck,
   Wifi,
   WifiOff,
   Wrench,
@@ -14,6 +15,7 @@ import {
 import { Toaster, toast } from "sonner";
 import { generateId } from "@modulos/core-shared";
 import { CashierView } from "./components/CashierView.js";
+import { CustomersView } from "./components/CustomersView.js";
 import { InventoryPurchasingView } from "./components/InventoryPurchasingView.js";
 import { PinLoginScreen } from "./components/PinLoginScreen.js";
 import { PosView, buildParkedOrder } from "./components/PosView.js";
@@ -35,6 +37,7 @@ import {
   ROLE_LABELS,
   type BusinessSettings,
   type CartItem,
+  type FerreCustomer,
   type FerreProduct,
   type FerreState,
   type FerreSupplier,
@@ -42,7 +45,13 @@ import {
   type PaymentMethod,
 } from "./core/ferre-types.js";
 
-type ActiveTab = "pos" | "cashier" | "inventory" | "reports" | "settings";
+type ActiveTab =
+  | "pos"
+  | "cashier"
+  | "customers"
+  | "inventory"
+  | "reports"
+  | "settings";
 
 export function App() {
   const [state, setState] = useState<FerreState>(() => loadFerreState());
@@ -99,6 +108,8 @@ export function App() {
   const perms = currentUser.permissions;
 
   const handleCompleteSale = (payload: {
+    customerId?: string;
+    customerName?: string;
     items: CartItem[];
     discountCents: number;
     paymentMethod: PaymentMethod;
@@ -118,6 +129,7 @@ export function App() {
 
     const saleId = generateId();
     const folio = state.nextFolio;
+    const nowIso = new Date().toISOString();
 
     setState((prev) => {
       const nextProducts = prev.products.map((p) => {
@@ -126,6 +138,32 @@ export function App() {
           ? { ...p, stock: Number((p.stock - sold.quantity).toFixed(3)) }
           : p;
       });
+
+      const nextCustomers =
+        payload.paymentMethod === "credit" && payload.customerId
+          ? prev.customers.map((c) =>
+              c.id === payload.customerId
+                ? {
+                    ...c,
+                    creditBalanceCents: addCents(
+                      c.creditBalanceCents,
+                      totalCents
+                    ),
+                    ledger: [
+                      {
+                        id: generateId(),
+                        type: "charge" as const,
+                        amountCents: totalCents,
+                        reference: `Venta a crédito Folio #${folio}`,
+                        userName: currentUser.name,
+                        createdAt: nowIso,
+                      },
+                      ...c.ledger,
+                    ],
+                  }
+                : c
+            )
+          : prev.customers;
 
       const nextAudit = [...prev.auditLog];
       if (payload.discountCents > 0) {
@@ -143,11 +181,14 @@ export function App() {
         ...prev,
         nextFolio: prev.nextFolio + 1,
         products: nextProducts,
+        customers: nextCustomers,
         sales: [
           {
             id: saleId,
             folio,
             shiftId: openShift.id,
+            customerId: payload.customerId,
+            customerName: payload.customerName,
             items: payload.items,
             subtotalCents,
             discountCents: payload.discountCents,
@@ -158,7 +199,7 @@ export function App() {
             status: "completed",
             createdByUserId: currentUser.id,
             createdByUserName: currentUser.name,
-            createdAt: new Date().toISOString(),
+            createdAt: nowIso,
           },
           ...prev.sales,
         ],
@@ -169,7 +210,9 @@ export function App() {
     toast.success(
       payload.paymentMethod === "cash"
         ? `Cobro #${folio} registrado — Cambio: ${formatMXN(changeCents)}`
-        : `Cobro #${folio} registrado correctamente`
+        : payload.paymentMethod === "credit"
+          ? `Venta #${folio} cargada a crédito de ${payload.customerName ?? "cliente"}`
+          : `Cobro #${folio} registrado correctamente`
     );
   };
 
@@ -307,6 +350,31 @@ export function App() {
           ? { ...p, stock: Number((p.stock + line.quantity).toFixed(3)) }
           : p;
       }),
+      customers:
+        sale.paymentMethod === "credit" && sale.customerId
+          ? prev.customers.map((c) =>
+              c.id === sale.customerId
+                ? {
+                    ...c,
+                    creditBalanceCents: Math.max(
+                      0,
+                      subtractCents(c.creditBalanceCents, sale.totalCents)
+                    ),
+                    ledger: [
+                      {
+                        id: generateId(),
+                        type: "refund_credit" as const,
+                        amountCents: sale.totalCents,
+                        reference: `Cancelación Folio #${sale.folio}`,
+                        userName: supervisor.name,
+                        createdAt: new Date().toISOString(),
+                      },
+                      ...c.ledger,
+                    ],
+                  }
+                : c
+            )
+          : prev.customers,
       sales: prev.sales.map((s) =>
         s.id === saleId
           ? {
@@ -481,6 +549,118 @@ export function App() {
     }));
   };
 
+  const handleSaveCustomer = (customer: FerreCustomer, isNew: boolean) => {
+    setState((prev) => ({
+      ...prev,
+      customers: isNew
+        ? [...prev.customers, customer]
+        : prev.customers.map((c) => (c.id === customer.id ? customer : c)),
+      auditLog: [
+        createAuditEntry(
+          "customer_updated",
+          currentUser,
+          `${isNew ? "Alta" : "Edición"} de cliente "${customer.name}"${customer.creditEnabled ? ` (Límite: ${formatMXN(customer.creditLimitCents)})` : ""}.`
+        ),
+        ...prev.auditLog,
+      ],
+    }));
+    toast.success(isNew ? "Cliente registrado." : "Cliente actualizado.");
+  };
+
+  const handleRecordCreditPayment = (
+    customerId: string,
+    amountCents: number,
+    reference: string
+  ) => {
+    const cust = state.customers.find((c) => c.id === customerId);
+    if (!cust) return;
+    const nowIso = new Date().toISOString();
+
+    setState((prev) => ({
+      ...prev,
+      customers: prev.customers.map((c) =>
+        c.id === customerId
+          ? {
+              ...c,
+              creditBalanceCents: Math.max(
+                0,
+                subtractCents(c.creditBalanceCents, amountCents)
+              ),
+              ledger: [
+                {
+                  id: generateId(),
+                  type: "payment" as const,
+                  amountCents,
+                  reference,
+                  userName: currentUser.name,
+                  createdAt: nowIso,
+                },
+                ...c.ledger,
+              ],
+            }
+          : c
+      ),
+      shifts: openShift
+        ? prev.shifts.map((s) =>
+            s.id === openShift.id
+              ? {
+                  ...s,
+                  movements: [
+                    ...s.movements,
+                    {
+                      id: generateId(),
+                      type: "deposit" as const,
+                      amountCents,
+                      reason: `Abono crédito: ${cust.name} (${reference})`,
+                      userName: currentUser.name,
+                      createdAt: nowIso,
+                    },
+                  ],
+                }
+              : s
+          )
+        : prev.shifts,
+      auditLog: [
+        createAuditEntry(
+          "credit_payment",
+          currentUser,
+          `Abono de ${formatMXN(amountCents)} de "${cust.name}" (${reference}).`
+        ),
+        ...prev.auditLog,
+      ],
+    }));
+
+    toast.success(
+      openShift
+        ? `Abono de ${formatMXN(amountCents)} registrado y sumado a caja.`
+        : `Abono de ${formatMXN(amountCents)} registrado.`
+    );
+  };
+
+  const handleToggleFreezeCustomer = (customerId: string) => {
+    const cust = state.customers.find((c) => c.id === customerId);
+    if (!cust) return;
+    setState((prev) => ({
+      ...prev,
+      customers: prev.customers.map((c) =>
+        c.id === customerId ? { ...c, creditFrozen: !c.creditFrozen } : c
+      ),
+      auditLog: [
+        createAuditEntry(
+          "customer_updated",
+          currentUser,
+          `${cust.creditFrozen ? "Reactivó" : "Congeló"} crédito de "${cust.name}".`
+        ),
+        ...prev.auditLog,
+      ],
+    }));
+    toast.info(
+      cust.creditFrozen
+        ? `Crédito de ${cust.name} reactivado.`
+        : `Crédito de ${cust.name} congelado.`
+    );
+  };
+
   const navItems: Array<{
     id: ActiveTab;
     label: string;
@@ -493,6 +673,12 @@ export function App() {
       label: "Caja",
       icon: Calculator,
       visible: perms.canOpenCloseShift || perms.canCollect,
+    },
+    {
+      id: "customers",
+      label: "Clientes y Crédito",
+      icon: UserCheck,
+      visible: perms.canSell || perms.canCollect || perms.canManageCredit,
     },
     {
       id: "inventory",
@@ -623,6 +809,7 @@ export function App() {
                 currentUser={currentUser}
                 users={state.users}
                 products={state.products}
+                customers={state.customers}
                 settings={state.settings}
                 openShift={openShift}
                 parkedOrders={state.parkedOrders}
@@ -644,6 +831,16 @@ export function App() {
                   onAddMovement={handleAddMovement}
                   onCloseShift={handleCloseShift}
                   onCancelSale={handleCancelSale}
+                />
+              )}
+            {activeTab === "customers" &&
+              (perms.canSell || perms.canCollect || perms.canManageCredit) && (
+                <CustomersView
+                  currentUser={currentUser}
+                  customers={state.customers}
+                  onSaveCustomer={handleSaveCustomer}
+                  onRecordPayment={handleRecordCreditPayment}
+                  onToggleFreeze={handleToggleFreezeCustomer}
                 />
               )}
             {activeTab === "inventory" &&

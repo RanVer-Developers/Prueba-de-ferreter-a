@@ -26,6 +26,7 @@ import type {
   BusinessSettings,
   CartItem,
   CashShift,
+  FerreCustomer,
   FerreProduct,
   FerreUser,
   ParkedOrder,
@@ -36,10 +37,13 @@ interface PosViewProps {
   currentUser: FerreUser;
   users: FerreUser[];
   products: FerreProduct[];
+  customers: FerreCustomer[];
   settings: BusinessSettings;
   openShift: CashShift | undefined;
   parkedOrders: ParkedOrder[];
   onCompleteSale: (payload: {
+    customerId?: string;
+    customerName?: string;
     items: CartItem[];
     discountCents: number;
     paymentMethod: PaymentMethod;
@@ -54,6 +58,7 @@ export function PosView({
   currentUser,
   users,
   products,
+  customers,
   settings,
   openShift,
   parkedOrders,
@@ -64,6 +69,7 @@ export function PosView({
   const perms = currentUser.permissions;
   const [query, setQuery] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState("cust-general");
   const [discountPesos, setDiscountPesos] = useState("");
   const [showCheckout, setShowCheckout] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
@@ -71,6 +77,11 @@ export function PosView({
   const [supervisorPin, setSupervisorPin] = useState("");
   const [parkLabel, setParkLabel] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const selectedCustomer = useMemo(
+    () => customers.find((c) => c.id === selectedCustomerId) ?? customers[0],
+    [customers, selectedCustomerId]
+  );
 
   const filteredProducts = useMemo(
     () => searchProductsFast(products, query),
@@ -213,6 +224,26 @@ export function PosView({
       toast.error("El efectivo recibido es menor al total a cobrar.");
       return;
     }
+    if (paymentMethod === "credit") {
+      if (!selectedCustomer || !selectedCustomer.creditEnabled) {
+        toast.error("Este cliente no tiene crédito autorizado.");
+        return;
+      }
+      if (selectedCustomer.creditFrozen) {
+        toast.error("La cuenta de crédito de este cliente está congelada.");
+        return;
+      }
+      const availableCredit = subtractCents(
+        selectedCustomer.creditLimitCents,
+        selectedCustomer.creditBalanceCents
+      );
+      if (totalCents > availableCredit) {
+        toast.error(
+          `Crédito insuficiente. Disponible: ${formatMXN(Math.max(0, availableCredit))}.`
+        );
+        return;
+      }
+    }
 
     let authorizedBy: FerreUser | undefined;
     if (discountCents > 0 && !perms.canApplyDiscount) {
@@ -233,17 +264,24 @@ export function PosView({
     }
 
     onCompleteSale({
+      customerId: selectedCustomer?.id,
+      customerName: selectedCustomer?.name,
       items: cart,
       discountCents,
       paymentMethod,
       cashReceivedCents:
-        paymentMethod === "cash" ? cashReceivedCents : totalCents,
+        paymentMethod === "cash"
+          ? cashReceivedCents
+          : paymentMethod === "credit"
+            ? 0
+            : totalCents,
       authorizedBy,
     });
     setCart([]);
     setDiscountPesos("");
     setCashReceivedPesos("");
     setSupervisorPin("");
+    setPaymentMethod("cash");
     setShowCheckout(false);
     searchInputRef.current?.focus();
   };
@@ -389,6 +427,33 @@ export function PosView({
         </div>
 
         <div className="p-4 space-y-4">
+          <div>
+            <label
+              htmlFor="pos-customer"
+              className="block text-xs font-medium text-slate-600 mb-1"
+            >
+              Cliente
+            </label>
+            <select
+              id="pos-customer"
+              value={selectedCustomerId}
+              onChange={(e) => {
+                setSelectedCustomerId(e.target.value);
+                setPaymentMethod("cash");
+              }}
+              className="w-full h-10 px-3 rounded-lg border border-slate-300 bg-white text-sm font-medium"
+            >
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                  {c.creditEnabled
+                    ? ` (Crédito disp: ${formatMXN(Math.max(0, c.creditLimitCents - c.creditBalanceCents))})`
+                    : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {cart.length === 0 ? (
             <div className="py-12 text-center text-slate-500 text-sm">
               Escanee un código de barras o toque un producto para iniciar la
@@ -591,30 +656,57 @@ export function PosView({
                 <span className="block text-sm font-medium text-slate-700 mb-2">
                   Forma de pago
                 </span>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {(
                     [
                       ["cash", "Efectivo", Banknote],
                       ["card", "Tarjeta", CreditCard],
                       ["transfer", "Transfer.", CreditCard],
+                      ["credit", "A crédito", Clock],
                     ] as const
-                  ).map(([method, label, Icon]) => (
-                    <button
-                      key={method}
-                      type="button"
-                      onClick={() => setPaymentMethod(method)}
-                      className={`min-h-11 rounded-lg border text-sm font-semibold flex items-center justify-center gap-1.5 transition ${
-                        paymentMethod === method
-                          ? "bg-slate-900 text-white border-slate-900"
-                          : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" strokeWidth={1.75} />
-                      {label}
-                    </button>
-                  ))}
+                  ).map(([method, label, Icon]) => {
+                    const creditDisabled =
+                      method === "credit" &&
+                      (!selectedCustomer?.creditEnabled ||
+                        selectedCustomer.creditFrozen);
+                    return (
+                      <button
+                        key={method}
+                        type="button"
+                        disabled={creditDisabled}
+                        onClick={() => setPaymentMethod(method)}
+                        className={`min-h-11 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1.5 transition disabled:opacity-40 ${
+                          paymentMethod === method
+                            ? "bg-slate-900 text-white border-slate-900"
+                            : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" strokeWidth={1.75} />
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
+
+              {paymentMethod === "credit" && selectedCustomer && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3.5 text-sm space-y-1">
+                  <p className="font-semibold text-amber-950">
+                    Cargo a cuenta de: {selectedCustomer.name}
+                  </p>
+                  <p className="text-xs text-amber-900 tabular-nums">
+                    Crédito disponible:{" "}
+                    {formatMXN(
+                      Math.max(
+                        0,
+                        selectedCustomer.creditLimitCents -
+                          selectedCustomer.creditBalanceCents
+                      )
+                    )}{" "}
+                    • Plazo: {selectedCustomer.creditTermDays} días
+                  </p>
+                </div>
+              )}
 
               {paymentMethod === "cash" && (
                 <div className="space-y-3">
