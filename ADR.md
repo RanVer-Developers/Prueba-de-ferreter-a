@@ -4,20 +4,20 @@
 
 ---
 
-## Decisión 1: Plataformas de la Versión 1
-- **Fecha:** 2026-11-24
-- **¿Qué decidimos?** Aplicación Web / PWA responsiva enfocada en computadora de mostrador (teclado y ratón) y tablet.
-- **¿Por qué?** Ferre Alfredo atiende muchos clientes en mostrador y necesita máxima velocidad operativa y facilidad de adopción viniendo de `eleventa`.
+## Decisión 1: Plataforma y experiencia operativa
+- **Fecha:** 2026-11-25
+- **¿Qué decidimos?** Aplicación Web / PWA responsiva enfocada principalmente en computadoras de mostrador (teclado y ratón) en la tienda, con soporte para tablet/móvil en bodega o reparto.
+- **¿Por qué?** Ferre Aguilar ya opera con `eleventa` en mostrador y necesita que el equipo adopte la nueva herramienta con la misma velocidad, pero con una interfaz sobria, moderna y profesional.
 
-## Decisión 2: Dónde se guardan los datos
-- **Fecha:** 2026-11-24
-- **¿Qué decidimos?** En la Versión 1 se guarda localmente en el dispositivo (modo offline-first ante intermitencia de internet), dejando la estructura lista para conectar a Firebase (Auth + Firestore) en la Versión 2.
-- **¿Por qué?** Permite salir rápido a operar sin frenar por la integración en la nube, garantizando que nunca se detenga el cobro si falla el internet.
+## Decisión 2: Almacenamiento local, operación sin internet y múltiples PCs en tienda
+- **Fecha:** 2026-11-25
+- **¿Qué decidimos?** Que los datos vivan en local y la app opere sin internet, soportando múltiples computadoras dentro de la única tienda (persistencia local con capacidad de sincronización en red local / almacenamiento compartido en tienda).
+- **¿Por qué?** La ferretería no puede detener sus ventas ni su control si falla el internet, y de momento no requiere nube externa.
 
-## Decisión 3: Qué NO vamos a construir todavía
-- **Fecha:** 2026-11-24
-- **¿Qué decidimos dejar fuera?**
-  1. Unidades de transporte, repartos y mantenimiento de unidades (pasa a Versión 2).
-  2. Conexión activa a Firebase en la nube (pasa a Versión 2).
-  3. Facturación electrónica (CFDI) a clientes.
-- **¿Por qué?** Entregar valor rápido en lo más urgente del negocio: velocidad en mostrador, caja, inventario, compras, indicadores y control anti-robo.
+## Decisión 3: Alcance incluido vs. excluido en esta versión
+- **Fecha:** 2026-11-25
+- **¿Qué decidimos incluir?** Mostrador, caja, inventario, compras a proveedores, unidades de transporte y repartos, mantenimiento de unidades, indicadores del negocio y control anti-robo con 6 roles (Dueño, Encargado, Cajera, Vendedor, Bodeguero, Chofer).
+- **¿Qué decidimos dejar fuera por ahora?**
+  1. Facturación electrónica (CFDI) a clientes (el negocio no factura actualmente).
+  2. Sincronización en la nube externa y soporte multi-sucursal (quedan para expansión futura).
+- **¿Por qué?** Cubrir toda la operación real de Ferre Aguilar sin complicar la puesta en marcha con módulos fiscales o de nube que hoy no necesitan.

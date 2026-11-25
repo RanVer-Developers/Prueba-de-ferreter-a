@@ -3,41 +3,45 @@
 > Completar este documento antes de escribir código. Sirve para alinear al cliente, Producto y Desarrollo.
 
 ## 1. Datos del Cliente y Negocio
-- **Nombre del negocio:** Ferre Alfredo
-- **Giro:** Ferretería (alto volumen de clientes en mostrador)
-- **Ciudad:** *(Por definir si aplica)*
-- **Contacto principal:** Dueño / Administración de Ferre Alfredo
+- **Nombre del negocio:** Ferre Aguilar
+- **Giro:** Ferretería (venta a mostrador y reparto a domicilio)
+- **Tienda:** Única tienda física (varias PCs en mostrador/bodega/administración)
+- **Contacto principal:** Dueño / Administración de Ferre Aguilar
 - **Cómo llevan el control hoy:** Sistema `eleventa`
 
 ## 2. Problema Principal a Resolver
-- Agilizar la atención en mostrador para muchos clientes sin sacrificar el control total del negocio (caja, inventario, compras e indicadores), evitando robos o mermas mediante permisos estrictos por puesto y registro de movimientos, y tolerando intermitencias de internet.
+- Modernizar la operación de la ferretería manteniendo la rapidez de atención en mostrador a la que ya están acostumbrados con `eleventa`, pero sumando control total anti-robo (permisos estrictos por puesto y registro de cada acción sensible), control de inventario y compras, seguimiento de unidades de transporte y su mantenimiento, e indicadores claros del negocio, todo operando sin depender de internet.
 
 ## 3. Alcance del MVP (Versión 1 — Precio de entrada)
 *Regla: Solo lo indispensable para que el cliente empiece a usar la app y vea valor rápido.*
-- [x] **Venta a mostrador ultrarrápida:** Búsqueda ágil de productos, atajos de teclado, cobro rápido y experiencia amigable para empleados acostumbrados a `eleventa`.
-- [x] **Caja y Control de Efectivo:** Apertura/corte de caja, registro de entradas/salidas, control estricto de cancelaciones, descuentos y diferencias.
-- [x] **Control de Inventarios y Compras a Proveedores:** Catálogo de productos, registro de compras para surtir stock, alertas de stock bajo y ajustes auditados por bodeguero/encargado.
-- [x] **Usuarios, Permisos y Bitácora Anti-Robo:** Roles diferenciados (**Dueño, Encargado, Cajera, Vendedor, Bodeguero, Chofer**) con registro de quién realizó cada acción sensible.
-- [x] **Indicadores del Negocio (Tablero):** Ventas del día/mes, utilidad estimada, productos más vendidos, cortes de caja y alertas de inventario.
-- [x] **Clientes y Ventas a Crédito:** Directorio de clientes, límite de crédito, bloqueo por morosidad, cobro a crédito en mostrador y registro de abonos.
-- [x] **Modo Local / Offline-First:** Operación continua aunque haya intermitencia de internet (almacenamiento local en V1).
+- [x] **Venta a mostrador rápida:** Búsqueda ágil por nombre o código de barras, atajos de teclado, cuentas en espera y cobro ágil pensado para usuarios de `eleventa`.
+- [x] **Caja y control de efectivo:** Apertura y corte de turno, conteo de efectivo, entradas/salidas, cancelaciones y descuentos controlados.
+- [x] **Control de inventarios:** Catálogo de productos, existencias en tiempo real, kardex de movimientos, alertas de stock bajo y ajustes auditados.
+- [x] **Compras a proveedores:** Registro de proveedores, órdenes/recepciones de compra, entrada directa a inventario y actualización de costos.
+- [x] **Unidades de transporte y repartos:** Registro de camionetas/unidades, asignación de pedidos a choferes, seguimiento de entregas y confirmación de reparto.
+- [x] **Mantenimiento de unidades:** Historial de servicios, reparaciones, refacciones y alertas/seguimiento de mantenimiento por unidad.
+- [x] **Usuarios, permisos y bitácora anti-robo:** Roles diferenciados (**Dueño, Encargado, Cajera, Vendedor, Bodeguero, Chofer**) con permisos estrictos y registro de quién realiza cada movimiento sensible.
+- [x] **Indicadores del negocio:** Tablero con ventas del día/mes, utilidad estimada, productos más vendidos, cortes de caja y alertas de stock o mantenimiento.
+- [x] **Operación local sin internet (multi-PC en tienda):** Funcionamiento continuo sin conexión, permitiendo operar desde varias computadoras dentro de la tienda.
 
 ## 4. Módulos Opcionales / Crecimiento Futuro (Versión 2 / Upsells)
-- [ ] **Sincronización en la nube con Firebase:** Conexión en tiempo real a Firebase (Auth + Firestore) manteniendo compatibilidad con trabajo sin internet.
-- [ ] **Unidades de Transporte, Repartos y Mantenimiento:** Asignación de pedidos a camionetas/choferes, seguimiento de entregas y bitácora de mantenimiento de unidades.
-- [ ] **Facturación electrónica (CFDI) a clientes**
-- [ ] **Multi-sucursal / Reportes avanzados / Notificaciones por WhatsApp**
+- [ ] **Facturación electrónica (CFDI) a clientes** (por ahora el negocio no factura a sus clientes).
+- [ ] **Sincronización en la nube:** Respaldo y sincronización remota (ej. Firebase) para consultar desde fuera de la tienda o conectar sucursales futuras.
+- [ ] **Multi-sucursal:** Administración centralizada de varias tiendas.
+- [ ] **Notificaciones automáticas por WhatsApp:** Avisos de pedido en camino o entregas al cliente.
 
 ## 5. Requisitos Técnicos y Módulos Reutilizables
 - **Plataformas objetivo:** [x] Web / PWA  [ ] Android  [ ] iOS  [ ] Escritorio
-- **¿Requiere funcionar sin internet (Offline-first)?** Sí (intermitencia de internet)
-- **Módulos del monorepo RanVer a reutilizar:**
-  - `@modulos/core-shared` (aritmética `Money`, `ROUND_HALF_EVEN`, esquemas Zod base)
-  - `@modulos/core-auth-rbac` (PIN, roles `Dueño, Encargado, Cajera, Vendedor, Bodeguero, Chofer`, RBAC y aprobación de supervisor)
-  - `@modulos/core-catalog` (catálogo, categorías, códigos de barras y listas de precios)
-  - `@modulos/core-inventory` (existencias, kardex inmutable, alertas de stock bajo y ajustes auditados)
-  - `@modulos/core-purchasing` (proveedores, órdenes de compra, recepción de mercancía y actualización de costos)
-  - `@modulos/core-cashier` (turnos, cobros en mostrador, cambio, gastos, anulaciones auditadas, cortes X/Z e idempotencia offline)
-  - `@modulos/core-orders` (órdenes rápidas de mostrador y órdenes en espera)
-  - `@modulos/core-reports` (indicadores del negocio, utilidad, clasificación ABC y exportación)
-  - `@modulos/core-customers` (clientes, límite de crédito, abonos y antigüedad de saldos)
+- **¿Requiere funcionar sin internet (Offline-first)?** Sí (los datos viven en local y debe operar sin internet entre varias PCs de la tienda).
+- **Módulos del monorepo RanVer (`@modulos/*`) a reutilizar:**
+  - `@modulos/core-shared`: Aritmética monetaria exacta en centavos (`Money`) y esquemas base.
+  - `@modulos/core-settings`: Configuración general de Ferre Aguilar y su tienda única (`BASIC`).
+  - `@modulos/core-auth-rbac`: Acceso por usuario/PIN, roles (`Dueño`, `Encargado`, `Cajera`, `Vendedor`, `Bodeguero`, `Chofer`), permisos granulares, autorización de supervisor y bitácora anti-robo (`INTERMEDIATE`).
+  - `@modulos/core-catalog`: Productos, categorías, códigos de barras y listas de precios (`BASIC`/`INTERMEDIATE`).
+  - `@modulos/core-inventory`: Existencias, kardex inmutable, alertas de stock bajo y recepciones (`INTERMEDIATE`).
+  - `@modulos/core-purchasing`: Proveedores, compras, recepciones y actualización de costos (`INTERMEDIATE`).
+  - `@modulos/core-orders`: Venta rápida en mostrador, cuentas en espera y devoluciones (`INTERMEDIATE`).
+  - `@modulos/core-cashier`: Cajas, turnos, pagos mixtos, conteo por denominación, gastos y cortes (`INTERMEDIATE`).
+  - `@modulos/core-logistics`: Envíos, asignación a choferes/unidades, rutas y prueba de entrega (`INTERMEDIATE`).
+  - `@modulos/core-services`: Órdenes de mantenimiento de unidades de transporte, diagnóstico y refacciones (`BASIC`/`INTERMEDIATE`).
+  - `@modulos/core-reports`: Indicadores de ventas, utilidad/margen, comparativas y exportación (`INTERMEDIATE`).
