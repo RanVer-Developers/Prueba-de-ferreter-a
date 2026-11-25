@@ -30,25 +30,33 @@ No se escribe ni una línea de código hasta tener listos estos 3 documentos (la
 *(Opcional: `ADR.md` sirve para anotar decisiones importantes, como "elegimos solo Web primero" o "también la queremos en Android", para no olvidarlo después).*
 
 > **¿Qué decirle a la IA para empezar?**
-> *"Hola, quiero crear una app de [tu idea]. Usa la skill `gate0-dummies-coach` y guíame paso a paso antes de empezar a programar."*
+> *"Hola, quiero crear una app de [tu idea]. Usa la skill `gate0-dummies-coach`, hagamos la entrevista completa con checkboxes según mi giro y no pasemos a programar hasta que todo quede claro."*
+
+*(Nota: El Paso 0 es intencionalmente el paso donde más tiempo invertimos. Dejar todo definido aquí evita adivinar funciones, retrabajar y gastar tokens de más después).*
 
 ---
 
 ### Paso 1: Construir el "Cerebro" (Reutilizar módulos + Reglas del negocio + Pruebas)
 Antes de dibujar pantallas bonitas, la IA arma el "cerebro" de tu app (cuentas, validaciones, reglas y guardado).
 
-1. **Primero reutiliza lo que ya existe:** La IA consulta el catálogo de `RanVer-Developers/Modulos_reutilizables` (`https://github.com/RanVer-Developers/Modulos_reutilizables`) para traer únicamente los módulos ya probados que tu Versión 1 necesite (ej. caja, inventario, órdenes, facturación, permisos).
-2. **Solo programa lo nuevo:** La lógica específica de tu negocio que no exista en esos módulos se construye en TypeScript puro con sus **pruebas automáticas** (`vitest`) para comprobar que nunca falle.
+1. **Verificar acceso a `Modulos_reutilizables`:** Si el repositorio `RanVer-Developers/Modulos_reutilizables` (`https://github.com/RanVer-Developers/Modulos_reutilizables`) no está conectado, la IA debe **detenerse y pedírtelo** antes de programar nada.
+2. **Confirmar capacidades y niveles (`BASIC` / `INTERMEDIATE` / `ADVANCED`):** La IA te muestra qué módulos traerá y qué banderas encenderá según los checkboxes confirmados en tu `PROJECT_BRIEF.md`.
+3. **Solo programa lo nuevo:** La lógica específica de tu negocio que no exista en esos módulos se construye en TypeScript puro con sus **pruebas automáticas** (`vitest`) para comprobar que nunca falle.
+4. **Adaptadores listos antes de UI:** Antes de pasar al Paso 2, cada módulo seleccionado queda conectado a su adaptador de guardado real (`IndexedDB` / `SQLite` / `Firestore`) y probado en `Vitest` para que la interfaz nunca duplique lógica de negocio.
 
 - **¿Por qué así?** No reinventas la rueda en cosas críticas (como dinero o inventarios) y, si cambias el diseño mañana o pasas tu app de Web a Celular, el "cerebro" sigue intacto y funcionando igual.
-- **Tu papel aquí:** Confirmar qué módulos reutilizables sí aplican a tu Versión 1 y revisar que la IA entendió bien tus reglas propias.
+- **Tu papel aquí:** Confirmar qué módulos reutilizables y niveles sí aplican a tu Versión 1 y revisar que la IA entendió bien tus reglas propias.
 - **¿Qué decirle a la IA?**
-  > *"Ya tenemos listo el Paso 0. Revisa `https://github.com/RanVer-Developers/Modulos_reutilizables`, trae los módulos que apliquen a nuestro `PROJECT_BRIEF.md` y construye solo la lógica propia que falte con sus pruebas automáticas, sin hacer pantallas todavía."*
+  > *"Ya tenemos listo el Paso 0. Revisa `https://github.com/RanVer-Developers/Modulos_reutilizables`, confírmame los módulos, flags y adaptadores de guardado que aplican a nuestro `PROJECT_BRIEF.md`, y construye solo la lógica propia que falte con sus pruebas automáticas, sin hacer pantallas todavía."*
 
 ---
 
 ### Paso 2: Vestir la App (Pantallas + Celular / Escritorio)
 Ahora sí la IA construye las pantallas usando tu `BRAND.md` y `DESIGN.md`, y las conecta al "cerebro" del Paso 1. Si tu proyecto también va para celular (Android/iOS) o computadora (Windows/Linux), la IA empaqueta la misma app para esas plataformas.
+
+- **Reglas clave de esta etapa:**
+  - **Prueba en vivo accesible:** Si trabajas con la IA en la nube (VM remota), pídele entregar el build listo o publicar desde el inicio en GitHub Pages, Vercel o Netlify (si están conectados) para probar desde tu celular o computadora real sin depender solo de `localhost`.
+  - **Configuración del Dueño visible:** Toda app con múltiples roles o reglas activables debe incluir una pestaña de **Configuración** exclusiva del Dueño para editar usuarios, permisos granulares y reglas del negocio marcadas en `PROJECT_BRIEF.md`.
 
 - **Tu papel aquí (Anti-IA Slop):**
   - Abre la app y pruébala como si fueras un cliente nuevo.
