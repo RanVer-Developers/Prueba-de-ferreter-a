@@ -11,7 +11,7 @@
     - Paso 0 (Arranque): `gate0-dummies-coach`, `client-brief`. Si `RanVer-Developers/Modulos_reutilizables` está accesible en el entorno, lee **únicamente su archivo `CATALOG.md`** para alinear la entrevista y checkboxes con las capacidades y niveles (`BASIC` / `INTERMEDIATE` / `ADVANCED`) reales del catálogo (**prohibido abrir archivos `src/` durante el Paso 0** para evitar gasto innecesario de tokens).
     - Paso 1 (Core Headless y Módulos): **PROHIBIDO inventar lógica propia antes de consultar `RanVer-Developers/Modulos_reutilizables`** (local montado o GitHub).
       - **Regla de Bloqueo:** Si `RanVer-Developers/Modulos_reutilizables` no está accesible o devuelve 403/404, **DETENTE inmediatamente** y pide al usuario conectar el repositorio en los recursos del proyecto (o autorizar crear la lógica desde cero) antes de crear cualquier paquete `packages/*`.
-      - Inspecciona los archivos reales de `src/index.ts` y `*-features.ts` de cada módulo antes de usar símbolos o banderas.
+      - Lee primero **`API_CHEATSHEET.md`** (si existe en `Modulos_reutilizables`) para conocer `create*Module`, firmas de entrada/salida y unidades monetarias (`*Cents` vs pesos); inspecciona `src/index.ts` y `*-features.ts` solo para verificar detalles puntuales antes de usar símbolos o banderas.
       - Entrega y confirma con el usuario el **Contrato de Flags (`BASIC` / `INTERMEDIATE` / `ADVANCED` + overrides)** y los **adaptadores de persistencia** (`IndexedDB` / `SQLite` / `Firestore`; `InMemory` solo para tests y `LocalStorage` solo para demos temporales si el usuario lo autoriza) antes de pasar al Paso 2.
       - Para lógica propia nueva aplica `tdd`, `vitest`, `zod-validation-utilities` y `stack-multiplatform.md` (aplica `npm-package` solo si vas a crear o empaquetar un módulo `@modulos/*` publicable).
     - Paso 2 (UI y Multiplataforma): `react-best-practices`, `frontend-design`, `refactoring-ui`, `accessibility`, `capacitor-best-practices`, `tauri-v2` (respetando `BRAND.md` y `DESIGN.md`).
@@ -23,7 +23,7 @@
 ## 2. Flujo de Trabajo del Agente
 - **Idioma:** Responde siempre en español. Código, identificadores, comentarios técnicos y commits en inglés.
 - **Fuentes de verdad:** Antes de asumir versiones, scripts o contratos, inspecciona `package.json`, `pyproject.toml`, esquemas o la estructura real del repo. Nunca asumas que un archivo o símbolo existe sin verificarlo.
-- **Inspección de contratos reales:** Antes de importar cualquier función, clase o `FeatureFlag` de `@modulos/*`, verifica su nombre exacto en `packages/<modulo>/src/index.ts` y `*-features.ts`. Prohibido asumir nombres por memoria.
+- **Inspección de contratos reales:** Antes de importar cualquier función, clase o `FeatureFlag` de `@modulos/*`, consulta `API_CHEATSHEET.md` (si está disponible) y verifica su nombre exacto y unidad monetaria (`*Cents` vs pesos) en `packages/<modulo>/src/index.ts` y `*-features.ts`. Prohibido asumir nombres por memoria.
 - **Lectura eficiente:** Antes de abrir archivos extensos, busca primero símbolos, rutas o texto relevante. Lee solo el contexto necesario para tomar una decisión segura.
 - **Documentación actual:** Para APIs, frameworks o herramientas que cambian con frecuencia, consulta documentación oficial cuando esté disponible, además de los archivos de bloqueo/configuración del proyecto, antes de implementar.
 - **Planifica antes de cambios relevantes:** Si una tarea implica ambigüedad arquitectónica, cambios públicos, migraciones, dependencias nuevas o riesgo apreciable, presenta un plan breve antes de editar. Para cambios rutinarios, procede directamente.
@@ -47,7 +47,7 @@
 
 ## 5. Verificación y Git
 - **Cierre adaptativo:** Inspecciona los scripts del proyecto y ejecuta los relevantes al alcance del cambio (typecheck, lint, tests, build). En fase Bootstrap basta con compilación y chequeo de tipos limpios. Si hay fallos preexistentes, repórtalos sin atribuirlos al cambio actual.
-- **Git:** Crea commits siguiendo Conventional Commits (`feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`). Haz un **commit de respaldo al cerrar y aprobar cada compuerta** (`Paso 0`, `Paso 1`, `Paso 2`, `Paso 3`) para blindar el avance antes de iniciar la siguiente etapa. Trabajar en ramas `feat/...` o `fix/...` y abrir Pull Request hacia `dev` o `main` usando la plantilla de `.github/PULL_REQUEST_TEMPLATE.md`.
+- **Git:** Crea commits siguiendo Conventional Commits (`feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`). **Commit automático de compuerta:** En cuanto el usuario apruebe cerrar un paso (`Paso 0`, `Paso 1`, `Paso 2`, `Paso 3`) o indique pasar al siguiente, ejecuta automáticamente un `git commit` de respaldo del paso cerrado **sin esperar a que el usuario lo pida** y **antes** de crear o editar archivos de la siguiente etapa. Trabajar en ramas `feat/...` o `fix/...` y abrir Pull Request hacia `dev` o `main` usando la plantilla de `.github/PULL_REQUEST_TEMPLATE.md`.
 - **Auditoría pre-lanzamiento (solo en Producción):** Ejecuta el escaneo de vulnerabilidades disponible para el gestor de paquetes (`npm audit` o equivalente) y verifica que no queden secretos en el historial de Git.
 
 ## 6. Prohibiciones Explícitas

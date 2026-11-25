@@ -25,6 +25,10 @@
 - [ ] Recordatorios automáticos (WhatsApp / SMS)
 - [ ] Soporte remoto prioritario
 
+### Movido a V2 por alcance (acordado en Paso 0)
+*(Anotar aquí funciones que el cliente mencionó en su idea inicial pero que en los checkboxes decidió posponer para V2, para que quede constancia de que no se olvidaron).*
+- 
+
 ## 5. Requisitos Técnicos y Módulos Reutilizables
 - **Plataformas objetivo:** [ ] Web / PWA  [ ] Android  [ ] iOS  [ ] Escritorio
 - **¿Requiere funcionar sin internet (Offline-first)?** Sí / No
