@@ -1,8 +1,8 @@
-name: Deploy Ferre Alfredo Web to GitHub Pages
+name: Deploy Ferre Aguilar Web to GitHub Pages
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "V3", "V3-ferre-aguilar"]
   workflow_dispatch:
 
 permissions:
@@ -37,7 +37,7 @@ jobs:
         run: pnpm build
 
       - name: Build web app
-        run: pnpm --filter @ferre-alfredo/web build
+        run: pnpm --filter @ferre-aguilar/web build
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -45,7 +45,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./apps/web/dist
+          path: ./apps/ferre-aguilar-web/dist
 
   deploy:
     environment:
