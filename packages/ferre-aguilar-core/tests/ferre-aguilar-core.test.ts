@@ -6,6 +6,7 @@ import {
   FERRE_AGUILAR_ROLES,
   createFerreAguilarCore,
   resolveFerreAguilarFeatures,
+  roleHasPermission,
 } from '../src/index.js';
 
 describe('@ferre-aguilar/core', () => {
@@ -234,5 +235,11 @@ describe('@ferre-aguilar/core', () => {
     expect(maintenance.status).toBe('IN_PROGRESS');
     expect(maintenance.partLines.length).toBe(1);
     expect(maintenance.partsSubtotalCents).toBe(85000);
+  });
+
+  it('roleHasPermission follows the anti-theft matrix', () => {
+    expect(roleHasPermission('OWNER', 'sales:cancel')).toBe(true);
+    expect(roleHasPermission('CASHIER', 'sales:cancel')).toBe(false);
+    expect(roleHasPermission('DRIVER', 'cashier:charge')).toBe(false);
   });
 });

@@ -107,3 +107,9 @@ export const FERRE_AGUILAR_ROLE_DEFINITIONS: readonly RoleDefinition[] = [
     permissions: ['logistics:deliver', 'services:manage'],
   },
 ];
+
+/** Pure permission check against the approved role matrix (used by UIs for menus and supervisor overrides). */
+export function roleHasPermission(role: FerreAguilarRoleCode, permission: string): boolean {
+  const def = FERRE_AGUILAR_ROLE_DEFINITIONS.find((d) => d.code === role);
+  return def !== undefined && def.permissions.includes(permission);
+}
