@@ -1,4 +1,4 @@
-import type { ProductRecord } from './types';
+import type { CustomerRecord, ProductRecord } from './types';
 
 export const DEMO_STAFF = [
   { id: 'usr-dueno', displayName: 'Ricardo', roleCode: 'OWNER', pin: '1001' },
@@ -26,4 +26,10 @@ export const DEMO_PRODUCTS: ProductRecord[] = [
   p('CEM-50', 'Cemento gris 50 kg', 'saco', 235, 198, 20, 120),
   p('CAND-50', 'Candado 50 mm', 'pza', 115, 70, 5, 4),
   p('GUAN-TRAB', 'Guantes de trabajo', 'par', 55, 32, 10, 37),
+];
+
+export const DEMO_CUSTOMERS: CustomerRecord[] = [
+  { id: 'cust-roble', displayName: 'Constructora El Roble', phone: '477-111-2233', creditLimitCents: 1500000, creditUsedCents: 0, creditTermDays: 30, active: true },
+  { id: 'cust-garcia', displayName: 'Plomería García', phone: '477-444-5566', creditLimitCents: 500000, creditUsedCents: 0, creditTermDays: 15, active: true },
+  { id: 'cust-pepe', displayName: 'Don Pepe Albañil', phone: '477-777-8899', creditLimitCents: 200000, creditUsedCents: 0, creditTermDays: 7, active: true },
 ];

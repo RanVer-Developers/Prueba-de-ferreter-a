@@ -26,6 +26,7 @@
     "@modulos/core-auth-rbac": "workspace:*",
     "@modulos/core-cashier": "workspace:*",
     "@modulos/core-catalog": "workspace:*",
+    "@modulos/core-customers": "workspace:*",
     "@modulos/core-inventory": "workspace:*",
     "@modulos/core-logistics": "workspace:*",
     "@modulos/core-orders": "workspace:*",

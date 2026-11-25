@@ -524,6 +524,9 @@ importers:
       '@modulos/core-catalog':
         specifier: workspace:*
         version: link:../core-catalog
+      '@modulos/core-customers':
+        specifier: workspace:*
+        version: link:../core-customers
       '@modulos/core-inventory':
         specifier: workspace:*
         version: link:../core-inventory

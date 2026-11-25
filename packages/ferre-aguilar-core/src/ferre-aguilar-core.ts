@@ -5,6 +5,7 @@ import {
 } from '@modulos/core-auth-rbac';
 import { createCashierModule, PaymentMethod } from '@modulos/core-cashier';
 import { createCatalogModule } from '@modulos/core-catalog';
+import { createCustomersModule } from '@modulos/core-customers';
 import { createInventoryModule, Warehouse } from '@modulos/core-inventory';
 import { createLogisticsModule, Driver } from '@modulos/core-logistics';
 import { createOrdersModule } from '@modulos/core-orders';
@@ -123,6 +124,7 @@ export function createFerreAguilarCore(deps: FerreAguilarCoreDeps = {}) {
     tokenGenerator: deps.tokenGenerator ?? SimpleTokenGenerator,
   });
   const catalog = createCatalogModule({ featureProfile: features.catalog });
+  const customers = createCustomersModule({ featureProfile: features.customers });
   const inventory = createInventoryModule({ featureProfile: features.inventory });
   const purchasing = createPurchasingModule({ featureProfile: features.purchasing });
   const orders = createOrdersModule({ featureProfile: features.orders });
@@ -367,6 +369,7 @@ export function createFerreAguilarCore(deps: FerreAguilarCoreDeps = {}) {
     settings,
     authRbac,
     catalog,
+    customers,
     inventory,
     purchasing,
     orders,

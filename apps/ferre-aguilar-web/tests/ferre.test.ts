@@ -106,4 +106,36 @@ describe('Ferre Aguilar runtime', () => {
     expect(k.grossProfitCents).toBe(14500 - 9800);
     expect(k.lowStock.map((p) => p.id)).toContain('CAND-50');
   });
+
+  it('sells on credit, enforces limit, accepts payment into cash and voids credit sale', async () => {
+    const { store, ferre, login } = await setup();
+    const cajera = await login('usr-cajera', '3003');
+    const dueno = await login('usr-dueno', '1001');
+    await ferre.openShift(cajera, 10000);
+
+    // Don Pepe has 2000 MXN limit (200000 cents); 2 cubetas of paint = 2580 MXN -> blocked
+    await expect(
+      ferre.sell(cajera, [{ sku: 'PINT-VIN19', quantity: 2 }], 'CREDIT', 0, 'cust-pepe')
+    ).rejects.toThrow(/disponible/);
+
+    // 1 hammer = 145 MXN -> succeeds, does not add cash to drawer
+    const t = await ferre.sell(cajera, [{ sku: 'MART-001', quantity: 1 }], 'CREDIT', 0, 'cust-pepe');
+    expect(t.method).toBe('CREDIT');
+    expect(await ferre.expectedCash((await ferre.getOpenShift())!.id)).toBe(10000);
+    expect((await ferre.listCustomers()).find((c) => c.id === 'cust-pepe')?.creditUsedCents).toBe(14500);
+
+    // Cash payment of 45 MXN reduces debt to 100 MXN and adds 45 MXN to cash drawer
+    await ferre.recordCreditPayment(cajera, { customerId: 'cust-pepe', amountCents: 4500, method: 'CASH' });
+    expect(await ferre.expectedCash((await ferre.getOpenShift())!.id)).toBe(14500);
+    expect((await ferre.listCustomers()).find((c) => c.id === 'cust-pepe')?.creditUsedCents).toBe(10000);
+
+    // Reload preserves customer balance and cash
+    const reloaded = await createFerre(store);
+    expect((await reloaded.listCustomers()).find((c) => c.id === 'cust-pepe')?.creditUsedCents).toBe(10000);
+    expect(await reloaded.expectedCash((await reloaded.getOpenShift())!.id)).toBe(14500);
+
+    // New customer creation
+    const c = await reloaded.createCustomer(dueno, { displayName: 'Taller Norte', phone: '477-999-0000', creditLimitCents: 300000, creditTermDays: 15 });
+    expect(c.creditLimitCents).toBe(300000);
+  });
 });

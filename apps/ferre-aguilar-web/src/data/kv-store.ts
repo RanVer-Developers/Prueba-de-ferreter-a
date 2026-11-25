@@ -26,7 +26,7 @@ export class MemoryStore implements LocalStore {
 }
 
 const DB_NAME = 'ferre-aguilar';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 function req<T>(r: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {

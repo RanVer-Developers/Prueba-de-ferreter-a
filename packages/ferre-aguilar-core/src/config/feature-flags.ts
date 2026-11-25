@@ -14,6 +14,11 @@ import {
   type CatalogFeatureProfile,
 } from '@modulos/core-catalog';
 import {
+  resolveCustomerFeatures,
+  type CustomerFeatureFlags,
+  type CustomerFeatureProfile,
+} from '@modulos/core-customers';
+import {
   resolveInventoryFeatures,
   type InventoryFeatureFlags,
   type InventoryFeatureProfile,
@@ -53,6 +58,7 @@ export interface FerreAguilarFeatureProfiles {
   settings: SettingsFeatureProfile;
   authRbac: AuthRbacFeatureProfile;
   catalog: CatalogFeatureProfile;
+  customers: CustomerFeatureProfile;
   inventory: InventoryFeatureProfile;
   purchasing: PurchasingFeatureProfile;
   orders: OrderFeatureProfile;
@@ -66,6 +72,7 @@ export interface FerreAguilarResolvedFeatures {
   settings: SettingsFeatureFlags;
   authRbac: AuthRbacFeatureFlags;
   catalog: CatalogFeatureFlags;
+  customers: CustomerFeatureFlags;
   inventory: InventoryFeatureFlags;
   purchasing: PurchasingFeatureFlags;
   orders: OrderFeatureFlags;
@@ -98,6 +105,13 @@ export const FERRE_AGUILAR_FEATURE_PROFILES: Readonly<FerreAguilarFeatureProfile
     taxProfileHints: true,
     optimisticConcurrency: true,
     auditTrail: true,
+  },
+  customers: {
+    ...resolveCustomerFeatures('INTERMEDIATE'),
+    creditAccounts: true,
+    creditAgingAndHolds: true,
+    prepaidWallet: false,
+    loyaltyPoints: false,
   },
   inventory: {
     multiWarehouse: false,
@@ -150,6 +164,9 @@ export function resolveFerreAguilarFeatures(
     settings: resolveSettingsFeatures(overrides.settings ?? FERRE_AGUILAR_FEATURE_PROFILES.settings),
     authRbac: resolveAuthRbacFeatures(overrides.authRbac ?? FERRE_AGUILAR_FEATURE_PROFILES.authRbac),
     catalog: resolveCatalogFeatures(overrides.catalog ?? FERRE_AGUILAR_FEATURE_PROFILES.catalog),
+    customers: resolveCustomerFeatures(
+      overrides.customers ?? FERRE_AGUILAR_FEATURE_PROFILES.customers
+    ),
     inventory: resolveInventoryFeatures(
       overrides.inventory ?? FERRE_AGUILAR_FEATURE_PROFILES.inventory
     ),

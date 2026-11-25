@@ -15,6 +15,7 @@
 ## 3. Alcance del MVP (Versión 1 — Precio de entrada)
 *Regla: Solo lo indispensable para que el cliente empiece a usar la app y vea valor rápido.*
 - [x] **Venta a mostrador rápida:** Búsqueda ágil por nombre o código de barras, atajos de teclado, cuentas en espera y cobro ágil pensado para usuarios de `eleventa`.
+- [x] **Clientes y ventas a crédito (fiado controlado):** Catálogo de clientes con límite de crédito, ventas a crédito, consulta de adeudos y registro de abonos en caja.
 - [x] **Caja y control de efectivo:** Apertura y corte de turno, conteo de efectivo, entradas/salidas, cancelaciones y descuentos controlados.
 - [x] **Control de inventarios:** Catálogo de productos, existencias en tiempo real, kardex de movimientos, alertas de stock bajo y ajustes auditados.
 - [x] **Compras a proveedores:** Registro de proveedores, órdenes/recepciones de compra, entrada directa a inventario y actualización de costos.
@@ -37,6 +38,7 @@
   - `@modulos/core-shared`: Aritmética monetaria exacta en centavos (`Money`) y esquemas base.
   - `@modulos/core-settings`: Configuración general de Ferre Aguilar y su tienda única (`BASIC`).
   - `@modulos/core-auth-rbac`: Acceso por usuario/PIN, roles (`Dueño`, `Encargado`, `Cajera`, `Vendedor`, `Bodeguero`, `Chofer`), permisos granulares, autorización de supervisor y bitácora anti-robo (`INTERMEDIATE`).
+  - `@modulos/core-customers`: Clientes, límites de crédito, cargos por venta a crédito y abonos (`INTERMEDIATE`).
   - `@modulos/core-catalog`: Productos, categorías, códigos de barras y listas de precios (`BASIC`/`INTERMEDIATE`).
   - `@modulos/core-inventory`: Existencias, kardex inmutable, alertas de stock bajo y recepciones (`INTERMEDIATE`).
   - `@modulos/core-purchasing`: Proveedores, compras, recepciones y actualización de costos (`INTERMEDIATE`).

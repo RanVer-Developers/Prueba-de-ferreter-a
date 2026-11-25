@@ -1,13 +1,17 @@
-import { Banknote, CreditCard, Landmark, Minus, Plus, ReceiptText, Search, ShoppingCart, Trash2 } from 'lucide-react';
+import { Banknote, CreditCard, Landmark, Minus, Plus, ReceiptText, Search, ShoppingCart, Trash2, UserCheck } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useApp, useLoad } from '../app-context';
 import type { Ferre } from '../data/ferre';
 import { mxn } from '../data/kpis';
-import type { PaymentKind, TicketRecord } from '../data/types';
+import type { CustomerRecord, PaymentKind, TicketRecord } from '../data/types';
 import { Alert, Button, Card, Empty, Field, Modal, Skeleton, inputCls, toCents } from '../ui/kit';
 
-const loadAll = async (f: Ferre) => ({ products: await f.listProducts(), shift: await f.getOpenShift() });
+const loadAll = async (f: Ferre) => ({
+  products: await f.listProducts(),
+  customers: await f.listCustomers(),
+  shift: await f.getOpenShift(),
+});
 type Line = { sku: string; quantity: number };
 
 export function Pos() {
@@ -122,16 +126,22 @@ export function Pos() {
       </aside>
 
       {paying && (
-        <PayModal total={total} onClose={() => setPaying(false)}
-          onPay={async (method, tendered) => {
-            const t = await ferre.sell(session, cart, method, tendered);
+        <PayModal
+          total={total}
+          customers={data?.customers ?? []}
+          canCredit={ferre.can(session, 'sales:credit')}
+          onClose={() => setPaying(false)}
+          onPay={async (method, tendered, customerId) => {
+            const t = await ferre.sell(session, cart, method, tendered, customerId);
             setCart([]); setPaying(false); setDone(t); refresh();
-          }} />
+          }}
+        />
       )}
       {done && (
         <Modal title="Venta lista" onClose={() => setDone(null)}>
           <p className="num text-3xl font-bold text-ok">{mxn(done.totalCents)}</p>
           {done.method === 'CASH' && <p className="num mt-2 text-2xl">Cambio: <strong>{mxn(done.changeCents)}</strong></p>}
+          {done.method === 'CREDIT' && <p className="mt-2 text-lg font-semibold text-navy">Cargado a crédito de {done.customerName}</p>}
           <p className="mt-2 text-muted">Ticket {done.id}</p>
           <Button className="mt-4 w-full" onClick={() => { setDone(null); search.current?.focus(); }}>Nueva venta</Button>
         </Modal>
@@ -144,26 +154,42 @@ const METHODS: { id: PaymentKind; label: string; icon: typeof Banknote }[] = [
   { id: 'CASH', label: 'Efectivo', icon: Banknote },
   { id: 'DEBIT_CARD', label: 'Tarjeta', icon: CreditCard },
   { id: 'BANK_TRANSFER', label: 'Transferencia', icon: Landmark },
+  { id: 'CREDIT', label: 'Crédito', icon: UserCheck },
 ];
 
-function PayModal({ total, onClose, onPay }: { total: number; onClose: () => void; onPay: (m: PaymentKind, tendered: number) => Promise<void> }) {
+function PayModal({
+  total, customers, canCredit, onClose, onPay,
+}: {
+  total: number;
+  customers: CustomerRecord[];
+  canCredit: boolean;
+  onClose: () => void;
+  onPay: (m: PaymentKind, tendered: number, customerId?: string) => Promise<void>;
+}) {
   const [method, setMethod] = useState<PaymentKind>('CASH');
   const [given, setGiven] = useState('');
+  const [customerId, setCustomerId] = useState(customers[0]?.id ?? '');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  const visibleMethods = canCredit ? METHODS : METHODS.filter((m) => m.id !== 'CREDIT');
   const tendered = method === 'CASH' ? toCents(given) : total;
-  const missing = method === 'CASH' && tendered < total;
+  const selectedCustomer = customers.find((c) => c.id === customerId);
+  const availCredit = selectedCustomer ? selectedCustomer.creditLimitCents - selectedCustomer.creditUsedCents : 0;
+  const missingCash = method === 'CASH' && tendered < total;
+  const overCredit = method === 'CREDIT' && (!selectedCustomer || total > availCredit);
 
   const confirm = async () => {
     setBusy(true); setError('');
-    try { await onPay(method, tendered); } catch (e) { setError(e instanceof Error ? e.message : 'No se pudo cobrar.'); setBusy(false); }
+    try { await onPay(method, tendered, method === 'CREDIT' ? customerId : undefined); }
+    catch (e) { setError(e instanceof Error ? e.message : 'No se pudo cobrar.'); setBusy(false); }
   };
 
   return (
     <Modal title="Cobrar" onClose={onClose}>
       <p className="num mb-4 text-4xl font-bold text-navy">{mxn(total)}</p>
-      <div className="mb-4 grid grid-cols-3 gap-2" role="radiogroup" aria-label="Forma de pago">
-        {METHODS.map(({ id, label, icon: Icon }) => (
+      <div className={`mb-4 grid gap-2 ${visibleMethods.length === 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`} role="radiogroup" aria-label="Forma de pago">
+        {visibleMethods.map(({ id, label, icon: Icon }) => (
           <button key={id} type="button" role="radio" aria-checked={method === id} onClick={() => setMethod(id)}
             className={`flex min-h-16 flex-col items-center justify-center gap-1 rounded-md border-2 text-sm font-semibold ${method === id ? 'border-accent bg-orange-50 text-accent-strong' : 'border-line'}`}>
             <Icon size={22} aria-hidden />{label}
@@ -174,18 +200,34 @@ function PayModal({ total, onClose, onPay }: { total: number; onClose: () => voi
         <div className="mb-4 space-y-2">
           <Field label="¿Con cuánto paga?">
             <input inputMode="decimal" value={given} onChange={(e) => setGiven(e.target.value)} className={`${inputCls} num text-2xl`} placeholder="0.00"
-              onKeyDown={(e) => { if (e.key === 'Enter' && !missing && !busy) confirm(); }} />
+              onKeyDown={(e) => { if (e.key === 'Enter' && !missingCash && !busy) confirm(); }} />
           </Field>
           <div className="flex gap-2">
             {[total, 20000, 50000, 100000].filter((v, i, a) => a.indexOf(v) === i && v >= total).slice(0, 4).map((v) => (
               <button key={v} type="button" onClick={() => setGiven(String(v / 100))} className="num min-h-11 flex-1 rounded-md border border-line text-sm font-semibold hover:bg-slate-50">{v === total ? 'Exacto' : mxn(v)}</button>
             ))}
           </div>
-          <p className="num text-xl">{missing ? <span className="text-danger">Faltan {mxn(total - tendered)}</span> : <>Cambio: <strong className="text-ok">{mxn(tendered - total)}</strong></>}</p>
+          <p className="num text-xl">{missingCash ? <span className="text-danger">Faltan {mxn(total - tendered)}</span> : <>Cambio: <strong className="text-ok">{mxn(tendered - total)}</strong></>}</p>
+        </div>
+      )}
+      {method === 'CREDIT' && (
+        <div className="mb-4 space-y-2">
+          <Field label="Cliente">
+            <select className={inputCls} value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>{c.displayName} (disp. {mxn(c.creditLimitCents - c.creditUsedCents)})</option>
+              ))}
+            </select>
+          </Field>
+          {selectedCustomer && (
+            <p className={`num text-base ${overCredit ? 'font-semibold text-danger' : 'text-muted'}`}>
+              {overCredit ? `Crédito insuficiente (disponible: ${mxn(availCredit)})` : `Disponible después de esta venta: ${mxn(availCredit - total)}`}
+            </p>
+          )}
         </div>
       )}
       {error && <div className="mb-3"><Alert>{error}</Alert></div>}
-      <Button className="w-full" disabled={missing || busy} onClick={confirm}>Confirmar cobro</Button>
+      <Button className="w-full" disabled={missingCash || overCredit || busy} onClick={confirm}>Confirmar cobro</Button>
     </Modal>
   );
 }

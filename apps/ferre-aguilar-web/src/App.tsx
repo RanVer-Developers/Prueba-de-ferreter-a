@@ -1,4 +1,4 @@
-import { BarChart3, LogOut, Package, ScrollText, ShoppingCart, Truck, Wallet, WifiOff } from 'lucide-react';
+import { BarChart3, LogOut, Package, ScrollText, ShoppingCart, Truck, Users, Wallet, WifiOff } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Toaster, toast } from 'sonner';
 import { ProviderShell } from './app-context';
@@ -8,16 +8,18 @@ import { ErrorBoundary } from './ui/ErrorBoundary';
 import { Alert, Empty, Skeleton } from './ui/kit';
 import { AuditLog } from './views/AuditLog';
 import { Cash } from './views/Cash';
+import { Customers } from './views/Customers';
 import { Dashboard } from './views/Dashboard';
 import { Inventory } from './views/Inventory';
 import { Login, roleLabel } from './views/Login';
 import { Pos } from './views/Pos';
 import { SupportButton } from './views/Support';
 
-type Tab = 'pos' | 'cash' | 'inventory' | 'dashboard' | 'audit';
+type Tab = 'pos' | 'cash' | 'customers' | 'inventory' | 'dashboard' | 'audit';
 const TABS: { id: Tab; label: string; icon: typeof ShoppingCart; permission: string; view: () => ReactNode }[] = [
   { id: 'pos', label: 'Vender', icon: ShoppingCart, permission: 'sales:create', view: () => <Pos /> },
   { id: 'cash', label: 'Caja', icon: Wallet, permission: 'cashier:open_close', view: () => <Cash /> },
+  { id: 'customers', label: 'Clientes', icon: Users, permission: 'customers:read', view: () => <Customers /> },
   { id: 'inventory', label: 'Inventario', icon: Package, permission: 'inventory:read', view: () => <Inventory /> },
   { id: 'dashboard', label: 'Panel', icon: BarChart3, permission: 'reports:operational', view: () => <Dashboard /> },
   { id: 'audit', label: 'Bitácora', icon: ScrollText, permission: 'audit:read', view: () => <AuditLog /> },

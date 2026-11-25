@@ -242,4 +242,41 @@ describe('@ferre-aguilar/core', () => {
     expect(roleHasPermission('CASHIER', 'sales:cancel')).toBe(false);
     expect(roleHasPermission('DRIVER', 'cashier:charge')).toBe(false);
   });
+
+  it('supports customer credit accounts, charges, limit enforcement and payments', async () => {
+    const core = createFerreAguilarCore();
+    expect(core.features.customers.creditAccounts).toBe(true);
+    expect(core.features.customers.creditAgingAndHolds).toBe(true);
+
+    await core.customers.createCustomer({
+      id: 'cust-1',
+      displayName: 'Constructora El Roble',
+      creditLimitCents: 100000,
+      creditTermDays: 30,
+    });
+
+    await core.customers.chargeCredit({
+      customerId: 'cust-1',
+      amountCents: 60000,
+      referenceId: 'ord-1',
+      idempotencyKey: 'chg-1',
+    });
+
+    await expect(
+      core.customers.chargeCredit({
+        customerId: 'cust-1',
+        amountCents: 50000,
+        referenceId: 'ord-2',
+        idempotencyKey: 'chg-2',
+      })
+    ).rejects.toThrow();
+
+    const paid = await core.customers.recordCreditPayment({
+      customerId: 'cust-1',
+      amountCents: 25000,
+      referenceId: 'abono-1',
+      idempotencyKey: 'pay-1',
+    });
+    expect(paid.customer.creditBalanceCents).toBe(35000);
+  });
 });

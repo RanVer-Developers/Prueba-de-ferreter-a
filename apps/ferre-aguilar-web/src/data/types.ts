@@ -18,7 +18,29 @@ export interface ProductRecord {
   stock: number;
 }
 
-export type PaymentKind = 'CASH' | 'DEBIT_CARD' | 'BANK_TRANSFER';
+export interface CustomerRecord {
+  id: string;
+  displayName: string;
+  phone: string;
+  creditLimitCents: number;
+  creditUsedCents: number;
+  creditTermDays: number;
+  active: boolean;
+}
+
+export interface CreditPaymentRecord {
+  id: string;
+  at: string;
+  customerId: string;
+  customerName: string;
+  amountCents: number;
+  method: 'CASH' | 'DEBIT_CARD' | 'BANK_TRANSFER';
+  shiftId?: string;
+  byName: string;
+  notes?: string;
+}
+
+export type PaymentKind = 'CASH' | 'DEBIT_CARD' | 'BANK_TRANSFER' | 'CREDIT';
 
 export interface TicketItem {
   sku: string;
@@ -34,6 +56,8 @@ export interface TicketRecord {
   shiftId: string;
   cashierId: string;
   cashierName: string;
+  customerId?: string;
+  customerName?: string;
   items: TicketItem[];
   totalCents: number;
   method: PaymentKind;
@@ -80,6 +104,9 @@ export type AuditAction =
   | 'LOGIN'
   | 'LOGIN_FAILED'
   | 'SALE'
+  | 'CREDIT_SALE'
+  | 'CREDIT_PAYMENT'
+  | 'CUSTOMER_CREATE'
   | 'VOID_SALE'
   | 'SHIFT_OPEN'
   | 'SHIFT_CLOSE'
@@ -109,6 +136,8 @@ export interface ErrorRecord {
 export interface Collections {
   staff: StaffRecord;
   products: ProductRecord;
+  customers: CustomerRecord;
+  creditPayments: CreditPaymentRecord;
   tickets: TicketRecord;
   shifts: ShiftRecord;
   movements: MovementRecord;
@@ -118,5 +147,5 @@ export interface Collections {
 }
 export type CollectionName = keyof Collections;
 export const COLLECTION_NAMES: CollectionName[] = [
-  'staff', 'products', 'tickets', 'shifts', 'movements', 'purchases', 'audit', 'errors',
+  'staff', 'products', 'customers', 'creditPayments', 'tickets', 'shifts', 'movements', 'purchases', 'audit', 'errors',
 ];

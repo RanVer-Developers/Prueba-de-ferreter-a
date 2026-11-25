@@ -8,10 +8,12 @@ import {
   type FerreAguilarRoleCode,
 } from '@ferre-aguilar/core';
 import type { LocalStore } from './kv-store';
-import { DEMO_PRODUCTS, DEMO_STAFF } from './seed';
+import { DEMO_CUSTOMERS, DEMO_PRODUCTS, DEMO_STAFF } from './seed';
 import type {
   AuditAction,
   AuditRecord,
+  CreditPaymentRecord,
+  CustomerRecord,
   MovementRecord,
   PaymentKind,
   ProductRecord,
@@ -39,7 +41,6 @@ async function hashPin(userId: string, pin: string): Promise<string> {
   const data = new TextEncoder().encode(`ferre-aguilar:${userId}:${pin}`);
   const subtle = globalThis.crypto?.subtle;
   if (!subtle) {
-    // Plain http over LAN has no SubtleCrypto: fall back to a non-reversible mixing so PINs are never stored in clear.
     let h = 2166136261;
     for (const b of data) h = Math.imul(h ^ b, 16777619) >>> 0;
     return `fnv:${h.toString(16)}`;
@@ -48,7 +49,7 @@ async function hashPin(userId: string, pin: string): Promise<string> {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-const PAYMENT_MAP: Record<PaymentKind, PaymentMethod> = {
+const CASHIER_PAYMENT_MAP: Record<'CASH' | 'DEBIT_CARD' | 'BANK_TRANSFER', PaymentMethod> = {
   CASH: PaymentMethod.CASH,
   DEBIT_CARD: PaymentMethod.DEBIT_CARD,
   BANK_TRANSFER: PaymentMethod.BANK_TRANSFER,
@@ -82,6 +83,14 @@ export async function createFerre(store: LocalStore) {
     await store.put('products', { ...product, stock: a.totalAvailable });
   }
 
+  async function syncCustomerBalance(customerId: string) {
+    const rec = (await store.getAll('customers')).find((c) => c.id === customerId);
+    if (!rec) return;
+    const loaded = await core.customers.repositories.customerRepo.findById(customerId);
+    if (!loaded) return;
+    await store.put('customers', { ...rec, creditUsedCents: loaded.creditBalanceCents });
+  }
+
   async function loadProductIntoCore(p: ProductRecord) {
     await core.inventory.repositories.itemRepo.save(new InventoryItem({ id: p.id, sku: p.id, name: p.name }));
     if (p.stock > 0) {
@@ -95,6 +104,24 @@ export async function createFerre(store: LocalStore) {
     }
   }
 
+  async function loadCustomerIntoCore(c: CustomerRecord) {
+    await core.customers.createCustomer({
+      id: c.id,
+      displayName: c.displayName,
+      phone: c.phone || undefined,
+      creditLimitCents: c.creditLimitCents,
+      creditTermDays: c.creditTermDays,
+    });
+    if (c.creditUsedCents > 0) {
+      await core.customers.chargeCredit({
+        customerId: c.id,
+        amountCents: c.creditUsedCents,
+        referenceId: `hydrate:${c.id}`,
+        idempotencyKey: `hydrate:${c.id}`,
+      });
+    }
+  }
+
   async function replayShift(shift: ShiftRecord) {
     await core.cashier.openShift({
       shiftId: shift.id,
@@ -102,17 +129,31 @@ export async function createFerre(store: LocalStore) {
       cashier: { id: shift.cashierId, name: shift.cashierName, role: 'CASHIER' },
       initialAmount: shift.initialCents / 100,
     });
-    const tickets = (await store.getAll('tickets')).filter((t) => t.shiftId === shift.id);
+    const tickets = (await store.getAll('tickets')).filter((t) => t.shiftId === shift.id && t.method !== 'CREDIT');
     for (const t of tickets) {
+      const m = CASHIER_PAYMENT_MAP[t.method as 'CASH' | 'DEBIT_CARD' | 'BANK_TRANSFER'];
       await core.cashier.recordPayment({
         shiftId: shift.id,
         transactionReference: t.id,
         ticketTotal: t.totalCents / 100,
         concept: `Venta ${t.id}`,
-        payments: [{ id: `pmt-${t.id}`, method: PAYMENT_MAP[t.method], amount: t.totalCents / 100 }],
+        payments: [{ id: `pmt-${t.id}`, method: m, amount: t.totalCents / 100 }],
         tenderedCash: t.method === 'CASH' ? t.totalCents / 100 : undefined,
         idempotencyKey: `replay:${t.id}`,
         performedBy: { id: t.cashierId, name: t.cashierName, role: 'CASHIER' },
+      });
+    }
+    const creditPays = (await store.getAll('creditPayments')).filter((p) => p.shiftId === shift.id);
+    for (const p of creditPays) {
+      await core.cashier.recordPayment({
+        shiftId: shift.id,
+        transactionReference: p.id,
+        ticketTotal: p.amountCents / 100,
+        concept: `Abono ${p.customerName}`,
+        payments: [{ id: `pmt-${p.id}`, method: CASHIER_PAYMENT_MAP[p.method], amount: p.amountCents / 100 }],
+        tenderedCash: p.method === 'CASH' ? p.amountCents / 100 : undefined,
+        idempotencyKey: `replay-cp:${p.id}`,
+        performedBy: { id: p.byName, name: p.byName, role: 'CASHIER' },
       });
     }
     const movements = (await store.getAll('movements')).filter((m) => m.shiftId === shift.id);
@@ -141,7 +182,11 @@ export async function createFerre(store: LocalStore) {
     }
     for (const p of DEMO_PRODUCTS) await store.put('products', p);
   }
+  if ((await store.getAll('customers')).length === 0) {
+    for (const c of DEMO_CUSTOMERS) await store.put('customers', c);
+  }
   for (const p of await store.getAll('products')) await loadProductIntoCore(p);
+  for (const c of await store.getAll('customers')) await loadCustomerIntoCore(c);
   const openShift = (await store.getAll('shifts')).find((s) => s.status === 'OPEN');
   if (openShift) await replayShift(openShift);
 
@@ -165,6 +210,8 @@ export async function createFerre(store: LocalStore) {
     can: (session: Session, permission: string) => roleHasPermission(session.role, permission),
     listStaff: async (): Promise<StaffRecord[]> => (await store.getAll('staff')).filter((s) => s.active),
     listProducts: async () => (await store.getAll('products')).sort((a, b) => a.name.localeCompare(b.name)),
+    listCustomers: async () => (await store.getAll('customers')).filter((c) => c.active).sort((a, b) => a.displayName.localeCompare(b.displayName)),
+    listCreditPayments: async () => (await store.getAll('creditPayments')).sort((a, b) => b.at.localeCompare(a.at)),
     listTickets: async () => (await store.getAll('tickets')).sort((a, b) => b.at.localeCompare(a.at)),
     listMovements: async () => (await store.getAll('movements')).sort((a, b) => b.at.localeCompare(a.at)),
     listPurchases: async () => (await store.getAll('purchases')).sort((a, b) => b.at.localeCompare(a.at)),
@@ -214,7 +261,7 @@ export async function createFerre(store: LocalStore) {
       await log(session.name, 'CASH_MOVEMENT', `${kind === 'IN' ? 'Entrada' : 'Salida'} de ${amountCents / 100} pesos: ${concept.trim()}`, kind === 'OUT' ? 'alert' : 'normal');
     },
 
-    /** Blind-count cut: the cashier declares cash; the difference is revealed and logged. */
+    /** Cash count cut: the cashier declares cash; the difference is revealed and logged. */
     async closeShift(session: Session, declaredCents: number): Promise<{ expectedCents: number; differenceCents: number }> {
       await requirePermission(session, 'cashier:open_close');
       const shift = await this.getOpenShift();
@@ -239,9 +286,11 @@ export async function createFerre(store: LocalStore) {
       session: Session,
       lines: { sku: string; quantity: number }[],
       method: PaymentKind,
-      tenderedCents: number
+      tenderedCents: number,
+      customerId?: string
     ): Promise<TicketRecord> {
       await requirePermission(session, 'sales:create');
+      if (method === 'CREDIT') await requirePermission(session, 'sales:credit');
       const shift = await this.getOpenShift();
       if (!shift) throw new FerreError('La caja está cerrada. Pide que la abran para cobrar.');
       const products = await store.getAll('products');
@@ -251,6 +300,58 @@ export async function createFerre(store: LocalStore) {
         return { sku: p.id, name: p.name, quantity: l.quantity, unitPriceCents: p.priceCents, unitCostCents: p.costCents };
       });
       const totalCents = items.reduce((s, i) => s + Math.round(i.unitPriceCents * i.quantity), 0);
+
+      if (method === 'CREDIT') {
+        if (!customerId) throw new FerreError('Elige al cliente para la venta a crédito.');
+        const customer = (await store.getAll('customers')).find((c) => c.id === customerId && c.active);
+        if (!customer) throw new FerreError('Cliente no encontrado.');
+        const available = customer.creditLimitCents - customer.creditUsedCents;
+        if (totalCents > available) {
+          throw new FerreError(`El cliente solo tiene ${available / 100} pesos de crédito disponible.`);
+        }
+        for (const item of items) {
+          const av = await core.inventory.getStockAvailability({ itemId: item.sku, warehouseId: WAREHOUSE });
+          if (av.totalAvailable < item.quantity) {
+            throw new FerreError('No hay suficiente existencia de uno de los productos.');
+          }
+        }
+        const orderId = generateId('ord');
+        const { order } = await core.orders.createOrder({
+          id: orderId, idempotencyKey: generateId('cred-ord'), currency: 'MXN', channel: 'POS',
+          metadata: { cashierId: session.userId, customerId: customer.id },
+        });
+        for (const item of items) {
+          await core.orders.addLine({
+            orderId: order.id,
+            line: { lineId: generateId('line'), productId: item.sku, sku: item.sku, name: item.name, quantity: item.quantity, unitPriceCents: item.unitPriceCents },
+          });
+          await core.inventory.recordStockOut({
+            itemId: item.sku, warehouseId: WAREHOUSE, quantity: item.quantity, referenceId: order.id,
+            performedBy: { id: session.userId, name: session.name, role: session.role },
+            idempotencyKey: `cred:${order.id}:${item.sku}`,
+          });
+        }
+        await core.customers.chargeCredit({
+          customerId: customer.id, amountCents: totalCents, referenceId: order.id,
+          notes: `Venta a crédito ${order.id}`, performedBy: session.name, idempotencyKey: `chg:${order.id}`,
+        });
+        await core.orders.transitionStatus({
+          orderId: order.id, targetStatus: 'COMPLETED',
+          actor: { id: session.userId, name: session.name, role: 'CASHIER' },
+        });
+        const ticket: TicketRecord = {
+          id: order.id, at: new Date().toISOString(), shiftId: shift.id,
+          cashierId: session.userId, cashierName: session.name,
+          customerId: customer.id, customerName: customer.displayName,
+          items, totalCents, method: 'CREDIT', tenderedCents: 0, changeCents: 0, status: 'COMPLETED',
+        };
+        await store.put('tickets', ticket);
+        for (const i of items) await syncStock(i.sku);
+        await syncCustomerBalance(customer.id);
+        await log(session.name, 'CREDIT_SALE', `Venta a crédito ${ticket.id} a ${customer.displayName} por ${totalCents / 100} pesos`);
+        return ticket;
+      }
+
       if (method === 'CASH' && tenderedCents < totalCents) throw new FerreError('El efectivo recibido no alcanza.');
       let result;
       try {
@@ -258,7 +359,7 @@ export async function createFerre(store: LocalStore) {
           shiftId: shift.id, warehouseId: WAREHOUSE, cashierId: session.userId, cashierName: session.name,
           idempotencyKey: generateId('sale'),
           items: items.map(({ sku, name, quantity, unitPriceCents }) => ({ sku, name, quantity, unitPriceCents })),
-          paymentMethod: PAYMENT_MAP[method],
+          paymentMethod: CASHIER_PAYMENT_MAP[method],
           tenderedCents: method === 'CASH' ? tenderedCents : totalCents,
         });
       } catch (e) {
@@ -298,10 +399,76 @@ export async function createFerre(store: LocalStore) {
         await syncStock(i.sku);
       }
       await store.put('tickets', { ...ticket, status: 'VOIDED', voidReason: reason.trim() });
-      if (ticket.method === 'CASH' && ticket.shiftId === (await this.getOpenShift())?.id) {
+      if (ticket.method === 'CREDIT' && ticket.customerId) {
+        await core.customers.recordCreditPayment({
+          customerId: ticket.customerId, amountCents: ticket.totalCents, type: 'ADJUSTMENT_CREDIT',
+          referenceId: ticket.id, notes: `Cancelación ${ticket.id}`, performedBy: supervisor.displayName,
+          idempotencyKey: `void:${ticket.id}`,
+        });
+        await syncCustomerBalance(ticket.customerId);
+      } else if (ticket.method === 'CASH' && ticket.shiftId === (await this.getOpenShift())?.id) {
         await this.cashMovement({ userId: supervisor.id, name: supervisor.displayName, role: supervisor.roleCode }, 'OUT', ticket.totalCents, `Devolución ticket ${ticket.id}`);
       }
       await log(session.name, 'VOID_SALE', `Canceló ${ticket.id} (${ticket.totalCents / 100} pesos). Autorizó ${supervisor.displayName}. Motivo: ${reason.trim()}`, 'alert');
+    },
+
+    async createCustomer(session: Session, input: { displayName: string; phone: string; creditLimitCents: number; creditTermDays: number }): Promise<CustomerRecord> {
+      await requirePermission(session, 'customers:manage');
+      if (input.displayName.trim().length < 2) throw new FerreError('Escribe el nombre del cliente.');
+      if (input.creditLimitCents < 0) throw new FerreError('El límite de crédito no puede ser negativo.');
+      const rec: CustomerRecord = {
+        id: generateId('cust'),
+        displayName: input.displayName.trim(),
+        phone: input.phone.trim(),
+        creditLimitCents: input.creditLimitCents,
+        creditUsedCents: 0,
+        creditTermDays: Math.max(0, Math.round(input.creditTermDays)),
+        active: true,
+      };
+      await core.customers.createCustomer({
+        id: rec.id, displayName: rec.displayName, phone: rec.phone || undefined,
+        creditLimitCents: rec.creditLimitCents, creditTermDays: rec.creditTermDays,
+      });
+      await store.put('customers', rec);
+      await log(session.name, 'CUSTOMER_CREATE', `Registró cliente ${rec.displayName} con límite de ${rec.creditLimitCents / 100} pesos`);
+      return rec;
+    },
+
+    async recordCreditPayment(
+      session: Session,
+      input: { customerId: string; amountCents: number; method: 'CASH' | 'DEBIT_CARD' | 'BANK_TRANSFER'; notes?: string }
+    ): Promise<CreditPaymentRecord> {
+      await requirePermission(session, 'customers:credit_payment');
+      const shift = await this.getOpenShift();
+      if (!shift) throw new FerreError('La caja está cerrada. Ábrela para recibir el abono.');
+      const customer = (await store.getAll('customers')).find((c) => c.id === input.customerId && c.active);
+      if (!customer) throw new FerreError('Cliente no encontrado.');
+      if (!(input.amountCents > 0)) throw new FerreError('Escribe un abono mayor a cero.');
+      if (input.amountCents > customer.creditUsedCents) {
+        throw new FerreError(`El cliente solo debe ${customer.creditUsedCents / 100} pesos.`);
+      }
+      const id = generateId('cpay');
+      await core.customers.recordCreditPayment({
+        customerId: customer.id, amountCents: input.amountCents, type: 'PAYMENT',
+        referenceId: id, notes: input.notes?.trim() || 'Abono en caja',
+        performedBy: session.name, idempotencyKey: id,
+      });
+      await core.cashier.recordPayment({
+        shiftId: shift.id, transactionReference: id, ticketTotal: input.amountCents / 100,
+        concept: `Abono crédito ${customer.displayName}`,
+        payments: [{ id: `pmt-${id}`, method: CASHIER_PAYMENT_MAP[input.method], amount: input.amountCents / 100 }],
+        tenderedCash: input.method === 'CASH' ? input.amountCents / 100 : undefined,
+        idempotencyKey: id,
+        performedBy: { id: session.userId, name: session.name, role: 'CASHIER' },
+      });
+      const rec: CreditPaymentRecord = {
+        id, at: new Date().toISOString(), customerId: customer.id, customerName: customer.displayName,
+        amountCents: input.amountCents, method: input.method, shiftId: shift.id, byName: session.name, notes: input.notes?.trim(),
+      };
+      await store.put('creditPayments', rec);
+      await syncCustomerBalance(customer.id);
+      await log(session.name, 'CREDIT_PAYMENT', `Abono de ${customer.displayName} por ${input.amountCents / 100} pesos`);
+      return rec;
     },
 
     async receivePurchase(session: Session, input: { supplier: string; sku: string; quantity: number; unitCostCents: number }): Promise<PurchaseRecord> {
