@@ -19,6 +19,7 @@ Usa esta skill cuando el usuario quiera iniciar un proyecto nuevo o pida ayuda p
 - Identifica claramente el **giro del negocio** (ej. comercio/POS, consultorio, taller, restaurante, servicios, etc.) y ayuda a recortar lo que no es indispensable para la Versión 1 (MVP), pasándolo a "Módulos Opcionales".
 
 ### 1.5. Ronda de Checkboxes de Capacidades (Adaptada al Giro — Para NO adivinar)
+- **Lectura previa del catálogo (bajo costo en tokens):** Si `RanVer-Developers/Modulos_reutilizables` está accesible en el entorno, lee **únicamente su archivo `CATALOG.md`** (**prohibido abrir archivos `src/` en el Paso 0**). Usa ese resumen para cruzar el giro del negocio contra los módulos y flags ya existentes (`BASIC` / `INTERMEDIATE` / `ADVANCED`) y redactar los checkboxes en español cotidiano con base en capacidades reales. Si el repositorio no está conectado o aún no tiene `CATALOG.md`, usa los bloques por giro de abajo e informa al usuario.
 - **Antes de cerrar `PROJECT_BRIEF.md`**, presenta al usuario una ronda exhaustiva de capacidades en español cotidiano, **agrupadas de 4 en 4** y **adaptadas específicamente al giro del negocio** para que marque qué entra en **Versión 1 (`[x]`)**, qué queda en **Versión 2 (`[V2]`)** y qué **no aplica (`[ ]`)**.
 - **Regla de giro:**
   - **Si el proyecto es de Comercio / Tienda / POS**, usa como base estos bloques (ajustando lo que no aplique al comercio específico):

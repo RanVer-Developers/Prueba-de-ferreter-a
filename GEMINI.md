@@ -8,7 +8,7 @@
   - **Plan maestro (para no programadores):** Sigue siempre el flujo de `PLAYBOOK.md` (Paso 0 → Paso 4). No escribas código de aplicación ni pantallas antes de completar el Paso 0 (`PROJECT_BRIEF.md`, `BRAND.md`, `DATA_SECURITY.md` y `ADR.md`).
   - **Reglas técnicas:** Revisa siempre `.agent/rules/` (o `rules/`) al inicio para aplicar las normas activas (ej. `stack-multiplatform.md` u otras que se agreguen).
   - **Skills operativas del repo (Lectura obligatoria):** Al iniciar cualquier Paso (0, 1, 2, 3 o 4), **ANTES de crear o editar archivos**, lee el `SKILL.md` de todas las skills asignadas a esa etapa (o indica explícitamente al usuario si alguna no aplica al alcance):
-    - Paso 0 (Arranque): `gate0-dummies-coach`, `client-brief`.
+    - Paso 0 (Arranque): `gate0-dummies-coach`, `client-brief`. Si `RanVer-Developers/Modulos_reutilizables` está accesible en el entorno, lee **únicamente su archivo `CATALOG.md`** para alinear la entrevista y checkboxes con las capacidades y niveles (`BASIC` / `INTERMEDIATE` / `ADVANCED`) reales del catálogo (**prohibido abrir archivos `src/` durante el Paso 0** para evitar gasto innecesario de tokens).
     - Paso 1 (Core Headless y Módulos): **PROHIBIDO inventar lógica propia antes de consultar `RanVer-Developers/Modulos_reutilizables`** (local montado o GitHub).
       - **Regla de Bloqueo:** Si `RanVer-Developers/Modulos_reutilizables` no está accesible o devuelve 403/404, **DETENTE inmediatamente** y pide al usuario conectar el repositorio en los recursos del proyecto (o autorizar crear la lógica desde cero) antes de crear cualquier paquete `packages/*`.
       - Inspecciona los archivos reales de `src/index.ts` y `*-features.ts` de cada módulo antes de usar símbolos o banderas.

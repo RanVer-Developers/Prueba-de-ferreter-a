@@ -32,7 +32,7 @@ No se escribe ni una línea de código hasta tener listos estos 3 documentos (la
 > **¿Qué decirle a la IA para empezar?**
 > *"Hola, quiero crear una app de [tu idea]. Usa la skill `gate0-dummies-coach`, hagamos la entrevista completa con checkboxes según mi giro y no pasemos a programar hasta que todo quede claro."*
 
-*(Nota: El Paso 0 es intencionalmente el paso donde más tiempo invertimos. Dejar todo definido aquí evita adivinar funciones, retrabajar y gastar tokens de más después).*
+*(Nota: El Paso 0 es intencionalmente el paso donde más tiempo invertimos. Si `Modulos_reutilizables` está conectado desde el inicio, la IA leerá solo su catálogo resumido `CATALOG.md` para hacerte preguntas certeras según tu giro sin gastar tokens de más. Dejar todo definido aquí evita adivinar funciones y retrabajar después).*
 
 ---
 
