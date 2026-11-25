@@ -3,34 +3,36 @@
 > Completa esto antes de programar. La IA usará estas respuestas para crear los candados reales de tu base de datos y proteger la información.
 
 ## 1. ¿Qué información va a guardar la app?
-*(Lista simple en lenguaje normal: ej. "Clientes, productos, ventas, citas, fotos de recibos")*
-- 
-- 
-- 
+- Catálogo de productos (nombres, apodos/medidas, ubicaciones en pasillo/estante, costos, precios público/mayoreo, equivalencias de caja/rollo a pieza/metro).
+- Existencias en inventario, movimientos (kardex), alertas de stock mínimo, conteos por pasillo y entradas de compras a proveedores.
+- Clientes frecuentes, saldos de crédito (fiado), límites autorizados, plazos y abonos a notas específicas.
+- Cotizaciones pendientes, notas de venta en espera, ventas cobradas, entregas pendientes en bodega/patio y turnos/movimientos de caja.
+- Usuarios, puestos, permisos y bitácora de autorizaciones con PIN.
 
 ## 2. ¿Quiénes usan la app y qué puede hacer cada quien?
-*(Define los roles. Ejemplo: "Dueño: ve todo y borra. Empleado: solo registra ventas, no puede borrar ni ver ganancias")*
-- **Rol 1 (ej. Dueño / Admin):**
-- **Rol 2 (ej. Operador / Cliente):**
+- **Rol 1 (Dueño / Encargado General):** Acceso total. Puede ver utilidades y costos, autorizar con su PIN ventas sin stock, créditos excedidos/vencidos, descuentos mayores, cancelaciones, devoluciones y cambios de precio; editar permisos, usuarios y respaldar/restaurar datos.
+- **Rol 2 (Vendedor de Mostrador):** Busca productos, arma cotizaciones, convierte cotizaciones a venta, envía notas en espera a caja y aplica descuentos pequeños dentro del tope permitido. No cancela ventas cobradas ni cambia precios base.
+- **Rol 3 (Cajero):** Cobra notas en espera, recibe abonos de crédito, registra apertura/cierre de turno y gastos menores con motivo obligatorio. Hace arqueo ciego al cerrar (no ve el monto esperado antes de declarar).
+- **Rol 4 (Encargado de Bodega / Patio):** Consulta únicamente pedidos ya pagados pendientes de surtir/cargar, marca entregas completadas y reporta productos por agotarse o conteos de pasillo.
 
 ## 3. Privacidad entre usuarios / negocios
 - **¿Un usuario puede ver los datos de otro usuario o negocio?**
   - [ ] No, cada quien solo ve lo suyo (aislamiento estricto).
-  - [ ] Solo dentro de su misma empresa/equipo.
-  - [ ] Hay información pública (especificar qué):
+  - [x] Solo dentro de su misma empresa/equipo (según los permisos de su puesto).
+  - [ ] Hay información pública
 
 ## 4. Modo de Trabajo e Internet
 - **¿Necesita funcionar cuando se va el internet?**
-  - [ ] Sí, debe seguir funcionando y sincronizar cuando regrese la señal.
+  - [x] Sí, debe funcionar de forma local sin depender de internet.
   - [ ] No, siempre habrá internet.
-- **¿Dónde se guardan los datos en la nube?**
-  - [ ] Firebase (Auth + Firestore)
+- **¿Dónde se guardan los datos?**
+  - [ ] Firebase (Auth + Firestore) — *(pospuesto para V2)*
   - [ ] PostgreSQL
-  - [ ] Solo local en el dispositivo (sin nube)
+  - [x] Solo local en el dispositivo (IndexedDB / SQLite local con respaldo y restauración manual en archivo `.json`).
 
-## 5. Acciones Delicadas (Requieren confirmación y registro)
-*(Marca las que aplican en tu app)*
-- [ ] Borrar clientes, productos o registros históricos
-- [ ] Cancelar ventas / devolver dinero
-- [ ] Cambiar precios o permisos de usuarios
-- [ ] Exportar listas completas de clientes o finanzas
+## 5. Acciones Delicadas (Requieren confirmación, PIN de Dueño y registro)
+- [x] Borrar clientes, productos o registros históricos
+- [x] Cancelar ventas / devolver dinero (PIN de Dueño)
+- [x] Cambiar precios o permisos de usuarios (PIN de Dueño)
+- [x] Vender un producto con inventario en cero o autorizar crédito excedido/vencido (PIN de Dueño)
+- [x] Exportar listas completas / generar respaldo `.json`
