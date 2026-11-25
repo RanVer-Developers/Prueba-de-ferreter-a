@@ -1,0 +1,44 @@
+{
+  "name": "@ferre-aguilar/core",
+  "version": "1.0.0",
+  "description": "Headless domain orchestration and feature-flag contract for Ferre Aguilar",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "author": "RanVer Developers",
+  "license": "MIT",
+  "dependencies": {
+    "@modulos/core-auth-rbac": "workspace:*",
+    "@modulos/core-cashier": "workspace:*",
+    "@modulos/core-catalog": "workspace:*",
+    "@modulos/core-inventory": "workspace:*",
+    "@modulos/core-logistics": "workspace:*",
+    "@modulos/core-orders": "workspace:*",
+    "@modulos/core-purchasing": "workspace:*",
+    "@modulos/core-reports": "workspace:*",
+    "@modulos/core-services": "workspace:*",
+    "@modulos/core-settings": "workspace:*",
+    "@modulos/core-shared": "workspace:*",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "vitest": "^5.1.1"
+  }
+}

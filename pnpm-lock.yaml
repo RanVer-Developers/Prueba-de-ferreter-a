@@ -331,6 +331,25 @@ importers:
         specifier: ^5.1.1
         version: 5.1.1(@types/node@22.20.5)(vite@6.4.6(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.33.0))
 
+  packages/core-logistics:
+    dependencies:
+      '@modulos/core-shared':
+        specifier: workspace:*
+        version: link:../core-shared
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.5
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^5.1.1
+        version: 5.1.1(@types/node@22.20.5)(vite@6.4.6(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.33.0))
+
   packages/core-orders:
     dependencies:
       '@modulos/core-shared':
@@ -388,8 +407,95 @@ importers:
         specifier: ^5.1.1
         version: 5.1.1(@types/node@22.20.5)(vite@6.4.6(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.33.0))
 
+  packages/core-services:
+    dependencies:
+      '@modulos/core-shared':
+        specifier: workspace:*
+        version: link:../core-shared
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.5
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^5.1.1
+        version: 5.1.1(@types/node@22.20.5)(vite@6.4.6(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.33.0))
+
+  packages/core-settings:
+    dependencies:
+      '@modulos/core-shared':
+        specifier: workspace:*
+        version: link:../core-shared
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.5
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^5.1.1
+        version: 5.1.1(@types/node@22.20.5)(vite@6.4.6(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.33.0))
+
   packages/core-shared:
     dependencies:
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.5
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^5.1.1
+        version: 5.1.1(@types/node@22.20.5)(vite@6.4.6(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.33.0))
+
+  packages/ferre-aguilar-core:
+    dependencies:
+      '@modulos/core-auth-rbac':
+        specifier: workspace:*
+        version: link:../core-auth-rbac
+      '@modulos/core-cashier':
+        specifier: workspace:*
+        version: link:../core-cashier
+      '@modulos/core-catalog':
+        specifier: workspace:*
+        version: link:../core-catalog
+      '@modulos/core-inventory':
+        specifier: workspace:*
+        version: link:../core-inventory
+      '@modulos/core-logistics':
+        specifier: workspace:*
+        version: link:../core-logistics
+      '@modulos/core-orders':
+        specifier: workspace:*
+        version: link:../core-orders
+      '@modulos/core-purchasing':
+        specifier: workspace:*
+        version: link:../core-purchasing
+      '@modulos/core-reports':
+        specifier: workspace:*
+        version: link:../core-reports
+      '@modulos/core-services':
+        specifier: workspace:*
+        version: link:../core-services
+      '@modulos/core-settings':
+        specifier: workspace:*
+        version: link:../core-settings
+      '@modulos/core-shared':
+        specifier: workspace:*
+        version: link:../core-shared
       zod:
         specifier: ^4.6.7
         version: 4.6.7
