@@ -334,7 +334,12 @@ export async function createFerreteriaApp(options: CreateFerreteriaAppOptions) {
   let dailyExpensesCents = 0;
 
   async function persistAllState(): Promise<void> {
+    const stockBalances: Array<{ itemId: string; qty: number }> = [];
+    for (const itemId of productProfiles.keys()) {
+      stockBalances.push({ itemId, qty: await getAvailableQty(itemId) });
+    }
     await store.saveCollection('products', Array.from(productProfiles.values()));
+    await store.saveCollection('stockBalances', stockBalances);
     await store.saveCollection('quotes', Array.from(quoteRecords.values()));
     await store.saveCollection('dispatches', Array.from(dispatches.values()));
     await store.saveCollection('creditNotes', Array.from(creditNotes.values()));
@@ -1429,6 +1434,10 @@ export async function createFerreteriaApp(options: CreateFerreteriaAppOptions) {
       profiles = rebuilt.profiles;
     }
 
+    const savedStocks = await store.getCollection<{ itemId: string; qty: number }>('stockBalances');
+    const stockMap = new Map(savedStocks.map((s) => [s.itemId, s.qty]));
+    const ownerActor = { id: 'owner-1', name: 'Dueño', role: 'OWNER' };
+
     for (const prod of savedProducts) {
       if (!productProfiles.has(prod.itemId)) {
         productProfiles.set(prod.itemId, prod);
@@ -1464,6 +1473,17 @@ export async function createFerreteriaApp(options: CreateFerreteriaAppOptions) {
             },
           })
         );
+        const qtyToRestore = stockMap.get(prod.itemId) ?? 0;
+        if (qtyToRestore > 0) {
+          await inventory.recordStockIn({
+            itemId: prod.itemId,
+            warehouseId: DEFAULT_WAREHOUSE_ID,
+            quantity: qtyToRestore,
+            unitCost: InventoryMoney.fromCents(prod.lastCostCents, DEFAULT_CURRENCY),
+            performedBy: ownerActor,
+            referenceId: 'hydrate-store',
+          });
+        }
       }
     }
     for (const q of savedQuotes) quoteRecords.set(q.quoteId, q);
@@ -1481,6 +1501,52 @@ export async function createFerreteriaApp(options: CreateFerreteriaAppOptions) {
     profiles = rebuilt.profiles;
     await persistAllState();
     return controls;
+  }
+
+  async function listParkedOrders(): Promise<
+    Array<{
+      orderId: string;
+      customerId?: string;
+      customerName: string;
+      deliveryMode: DeliveryMode;
+      grandTotalCents: number;
+      lineCount: number;
+      createdAt: string;
+    }>
+  > {
+    const result = [];
+    for (const [orderId, meta] of orderCustomerMap.entries()) {
+      const order = await orders.repositories.orderRepo.findById(orderId);
+      if (order && order.isParked) {
+        const { summary } = await orders.getSummary(order.id);
+        result.push({
+          orderId: order.id,
+          customerId: meta.customerId ?? order.customerId,
+          customerName: meta.customerName ?? 'Público General',
+          deliveryMode: meta.deliveryMode ?? 'COUNTER_IMMEDIATE',
+          grandTotalCents: summary.total.toCents(),
+          lineCount: order.lines.length,
+          createdAt: order.createdAt.toISOString(),
+        });
+      }
+    }
+    return result;
+  }
+
+  function listQuotes(): QuoteRecord[] {
+    return Array.from(quoteRecords.values());
+  }
+
+  function listCreditNotes(): CreditNoteTrack[] {
+    return Array.from(creditNotes.values());
+  }
+
+  async function listCreditCustomers() {
+    return customers.searchCustomers({});
+  }
+
+  function getActiveShiftStatus(): { isOpen: boolean; shiftId: string | null } {
+    return { isOpen: activeShiftId !== null, shiftId: activeShiftId };
   }
 
   return {
@@ -1508,6 +1574,11 @@ export async function createFerreteriaApp(options: CreateFerreteriaAppOptions) {
     recalculateQuotePrices,
     convertQuoteToParkedOrder,
     createParkedSale,
+    listParkedOrders,
+    listQuotes,
+    listCreditNotes,
+    listCreditCustomers,
+    getActiveShiftStatus,
     openCashierShift,
     payOrderAtCashier,
     registerCreditCustomer,
