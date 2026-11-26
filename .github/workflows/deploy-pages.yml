@@ -33,7 +33,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --dangerously-allow-all-builds || pnpm install --dangerously-allow-all-builds
+        run: pnpm install --frozen-lockfile
 
       - name: Build core packages and web app
         run: pnpm --filter "./packages/*" build && pnpm --filter @ferreteria/web build
